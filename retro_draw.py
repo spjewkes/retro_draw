@@ -17,6 +17,16 @@ class RetroDrawWidget(QWidget):
     def __init__(self, parent=None):
         super(RetroDrawWidget, self).__init__(parent)
 
+        self.grid = QImage(1024, 768, QImage.Format_RGBA8888)
+        self.grid.fill(QColor(255, 255, 255, 0))
+        for y in range(0, 768):
+            for x in range(0, 1024, 8 * 4):
+                self.grid.setPixelColor(x, y, QColor(0, 0, 0, 32))
+
+        for x in range(0, 1024):
+            for y in range(0, 768, 8 * 4):
+                self.grid.setPixelColor(x, y, QColor(0, 0, 0, 32))
+
         self.drawable = QImage(256, 192, QImage.Format_RGBA8888)
         self.drawable.fill(QColor(255, 255, 255, 255))
 
@@ -39,6 +49,8 @@ class RetroDrawWidget(QWidget):
         rectTarget = self.rect()
         rectSource = QRect(0, 0, 256, 192)
         painter.drawImage(rectTarget, self.drawable, rectSource)
+
+        painter.drawImage(rectTarget, self.grid, rectTarget)
 
     def mousePressEvent(self, event):
         if event.button() == Qt.LeftButton:
