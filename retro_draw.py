@@ -74,8 +74,8 @@ class Form(QDialog):
         super(Form, self).__init__(parent)
         self.setWindowTitle("Drawing App")
 
-        self.button_draw = QPushButton(QIcon("draw.ico"), "")
-        self.button_erase = QPushButton(QIcon("eraser.ico"), "")
+        self.button_draw = QPushButton(QIcon("res/draw.ico"), "")
+        self.button_erase = QPushButton(QIcon("res/eraser.ico"), "")
 
         # Create layout and add widgets
         layout = QVBoxLayout()
