@@ -3,7 +3,7 @@
 import sys
 from enum import Enum
 from PySide2.QtWidgets import (QApplication, QDialog, QLineEdit, QPushButton, QVBoxLayout, QWidget)
-from PySide2.QtGui import (QIcon, QPainter, QBrush, QPen, QColor, QFont, QImage)
+from PySide2.QtGui import (QIcon, QPainter, QBrush, QPen, QColor, QFont, QImage, QPixmap)
 from PySide2.QtCore import QSize, QRect, Qt
 
 class DrawingMode(Enum):
@@ -21,11 +21,13 @@ class RetroDrawWidget(QWidget):
         self.grid.fill(QColor(255, 255, 255, 0))
         for y in range(0, 768):
             for x in range(0, 1024, 8 * 4):
-                self.grid.setPixelColor(x, y, QColor(0, 0, 0, 32))
+                self.grid.setPixelColor(x, y, QColor(0, 0, 0, 255))
 
         for x in range(0, 1024):
             for y in range(0, 768, 8 * 4):
-                self.grid.setPixelColor(x, y, QColor(0, 0, 0, 32))
+                self.grid.setPixelColor(x, y, QColor(0, 0, 0, 255))
+
+        self.guide = QPixmap("baboon.bmp")
 
         self.drawable = QImage(256, 192, QImage.Format_RGBA8888)
         self.drawable.fill(QColor(255, 255, 255, 255))
@@ -50,15 +52,19 @@ class RetroDrawWidget(QWidget):
         rectSource = QRect(0, 0, 256, 192)
         painter.drawImage(rectTarget, self.drawable, rectSource)
 
+        painter.setOpacity(0.2)
+        painter.drawPixmap(rectTarget, self.guide, self.guide.rect())
         painter.drawImage(rectTarget, self.grid, rectTarget)
 
     def mousePressEvent(self, event):
         if event.button() == Qt.LeftButton:
             self.drawMode = DrawingMode.DRAW
             self.drawing = True
+            self.doDraw(event.localPos())
         elif event.button() == Qt.RightButton:
             self.drawMode = DrawingMode.ERASE
             self.drawing = True
+            self.doDraw(event.localPos())
 
     def mouseReleaseEvent(self, event):
         if event.button() == Qt.LeftButton:
@@ -68,18 +74,20 @@ class RetroDrawWidget(QWidget):
 
     def mouseMoveEvent(self, event):
         if self.drawing:
-            localPos = event.localPos()
-            if localPos.x() >= 0.0 and localPos.x() < 1024.0 and \
-               localPos.y() >= 0.0 and localPos.y() < 768.0:
-                x = localPos.x() / 4
-                y = localPos.y() / 4
+            self.doDraw(event.localPos())
 
-                if self.drawMode == DrawingMode.DRAW:
-                    self.drawable.setPixelColor(x, y, self.drawColor)
-                elif self.drawMode == DrawingMode.ERASE:
-                    self.drawable.setPixelColor(x, y, self.eraseColor)
+    def doDraw(self, localPos):
+        if localPos.x() >= 0.0 and localPos.x() < 1024.0 and \
+           localPos.y() >= 0.0 and localPos.y() < 768.0:
+            x = localPos.x() / 4
+            y = localPos.y() / 4
 
-                self.update(self.rect())
+            if self.drawMode == DrawingMode.DRAW:
+                self.drawable.setPixelColor(x, y, self.drawColor)
+            elif self.drawMode == DrawingMode.ERASE:
+                self.drawable.setPixelColor(x, y, self.eraseColor)
+
+            self.update(self.rect())
 
 class Form(QDialog):
     def __init__(self, parent=None):
