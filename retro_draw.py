@@ -4,7 +4,7 @@ import sys
 from enum import Enum
 from PySide2.QtWidgets import (QApplication, QDialog, QLineEdit, QPushButton, QVBoxLayout, QWidget)
 from PySide2.QtGui import (QIcon, QPainter, QBrush, QPen, QColor, QFont, QImage, QPixmap)
-from PySide2.QtCore import QSize, QRect, Qt
+from PySide2.QtCore import QSize, QRect, QPoint, Qt
 
 class DrawingMode(Enum):
     DRAW = 1
@@ -17,19 +17,24 @@ class RetroDrawWidget(QWidget):
     def __init__(self, parent=None):
         super(RetroDrawWidget, self).__init__(parent)
 
-        self.grid = QImage(1024, 768, QImage.Format_RGBA8888)
+        self.canvasSize = QSize(256, 192)
+        self.scale = 4
+        self.screenSize = self.canvasSize * self.scale
+        self.guideOpacity = 0.2
+
+        self.grid = QImage(self.screenSize, QImage.Format_RGBA8888)
         self.grid.fill(QColor(255, 255, 255, 0))
-        for y in range(0, 768):
-            for x in range(0, 1024, 8 * 4):
+        for y in range(0, self.screenSize.height()):
+            for x in range(0, self.screenSize.width(), 8 * self.scale):
                 self.grid.setPixelColor(x, y, QColor(0, 0, 0, 255))
 
-        for x in range(0, 1024):
-            for y in range(0, 768, 8 * 4):
+        for x in range(0, self.screenSize.width()):
+            for y in range(0, self.screenSize.height(), 8 * self.scale):
                 self.grid.setPixelColor(x, y, QColor(0, 0, 0, 255))
 
         self.guide = QPixmap("baboon.bmp")
 
-        self.drawable = QImage(256, 192, QImage.Format_RGBA8888)
+        self.drawable = QImage(self.canvasSize, QImage.Format_RGBA8888)
         self.drawable.fill(QColor(255, 255, 255, 255))
 
         self.setCursor(Qt.CrossCursor)
@@ -41,18 +46,18 @@ class RetroDrawWidget(QWidget):
         self.drawMode = DrawingMode.DRAW
 
     def sizeHint(self):
-        return QSize(1024, 768)
+        return self.screenSize
 
     def minimumSizeHint(self):
-        return QSize(512, 384)
+        return self.screenSize
 
     def paintEvent(self, event):
         painter = QPainter(self)
         rectTarget = self.rect()
-        rectSource = QRect(0, 0, 256, 192)
+        rectSource = QRect(QPoint(0, 0), self.canvasSize)
         painter.drawImage(rectTarget, self.drawable, rectSource)
 
-        painter.setOpacity(0.2)
+        painter.setOpacity(self.guideOpacity)
         painter.drawPixmap(rectTarget, self.guide, self.guide.rect())
         painter.drawImage(rectTarget, self.grid, rectTarget)
 
@@ -77,8 +82,8 @@ class RetroDrawWidget(QWidget):
             self.doDraw(event.localPos())
 
     def doDraw(self, localPos):
-        if localPos.x() >= 0.0 and localPos.x() < 1024.0 and \
-           localPos.y() >= 0.0 and localPos.y() < 768.0:
+        if localPos.x() >= 0.0 and localPos.x() < self.screenSize.width() and \
+           localPos.y() >= 0.0 and localPos.y() < self.screenSize.height():
             x = localPos.x() / 4
             y = localPos.y() / 4
 
