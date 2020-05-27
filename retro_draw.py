@@ -1,19 +1,32 @@
 #!/usr/bin/env python3
 
 import sys
+from enum import Enum
 from PySide2.QtWidgets import (QApplication, QDialog, QLineEdit, QPushButton, QVBoxLayout, QWidget)
 from PySide2.QtGui import (QIcon, QPainter, QBrush, QPen, QColor, QFont, QImage)
 from PySide2.QtCore import QSize, QRect, Qt
 
-class RenderArea(QWidget):
+class DrawingMode(Enum):
+    DRAW = 1
+    ERASE = 2
+
+class RetroDrawWidget(QWidget):
+    """
+    Defines widget for displaying and handling all retro drawing.
+    """
     def __init__(self, parent=None):
-        super(RenderArea, self).__init__(parent)
+        super(RetroDrawWidget, self).__init__(parent)
 
         self.drawable = QImage(256, 192, QImage.Format_RGBA8888)
         self.drawable.fill(QColor(255, 255, 255, 255))
 
-        self.drawing = False
         self.setCursor(Qt.CrossCursor)
+
+        self.drawColor = QColor(0, 0, 0, 255)
+        self.eraseColor = QColor(255, 255, 255, 255)
+
+        self.drawingEnabled = False
+        self.drawMode = DrawingMode.DRAW
 
     def sizeHint(self):
         return QSize(1024, 768)
@@ -29,10 +42,16 @@ class RenderArea(QWidget):
 
     def mousePressEvent(self, event):
         if event.button() == Qt.LeftButton:
+            self.drawMode = DrawingMode.DRAW
+            self.drawing = True
+        elif event.button() == Qt.RightButton:
+            self.drawMode = DrawingMode.ERASE
             self.drawing = True
 
     def mouseReleaseEvent(self, event):
         if event.button() == Qt.LeftButton:
+            self.drawing = False
+        elif event.button() == Qt.RightButton:
             self.drawing = False
 
     def mouseMoveEvent(self, event):
@@ -40,7 +59,13 @@ class RenderArea(QWidget):
             localPos = event.localPos()
             if localPos.x() >= 0.0 and localPos.x() < 1024.0 and \
                localPos.y() >= 0.0 and localPos.y() < 768.0:
-                self.drawable.setPixelColor(localPos.x() / 4, localPos.y() / 4, QColor(0, 0, 0, 255))
+                x = localPos.x() / 4
+                y = localPos.y() / 4
+
+                if self.drawMode == DrawingMode.DRAW:
+                    self.drawable.setPixelColor(x, y, self.drawColor)
+                elif self.drawMode == DrawingMode.ERASE:
+                    self.drawable.setPixelColor(x, y, self.eraseColor)
 
                 self.update(self.rect())
 
@@ -56,7 +81,7 @@ class Form(QDialog):
         layout = QVBoxLayout()
         layout.addWidget(self.button_draw)
         layout.addWidget(self.button_erase)
-        layout.addWidget(RenderArea())
+        layout.addWidget(RetroDrawWidget())
 
         # Set dialog layout
         self.setLayout(layout)
