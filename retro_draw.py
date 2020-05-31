@@ -2,10 +2,10 @@
 
 import sys
 from enum import Enum
-from PySide2.QtWidgets import (QApplication, QDialog, QLineEdit, QPushButton, QVBoxLayout, QWidget)
-from PySide2.QtGui import (QIcon, QPainter, QBrush, QPen, QColor, QFont, QImage, QPixmap)
+from PySide2.QtWidgets import QApplication, QDialog, QLineEdit, QPushButton, QVBoxLayout, QWidget, QHBoxLayout, QLabel, QCheckBox
+from PySide2.QtGui import QIcon, QPainter, QBrush, QPen, QColor, QFont, QImage, QPixmap
 from PySide2.QtCore import QSize, QRect, QPoint, Qt
-from retmod.zxbuffer import ZXSpectrumBuffer
+from retmod.zxbuffer import ZXSpectrumBuffer, ZXAttribute
 
 class DrawingMode(Enum):
     DRAW = 1
@@ -34,8 +34,6 @@ class RetroDrawWidget(QWidget):
                 self.grid.setPixelColor(x, y, QColor(0, 0, 0, 255))
 
         self.guide = QPixmap("baboon.bmp")
-
-        
         self.drawable = ZXSpectrumBuffer()
 
         self.setCursor(Qt.CrossCursor)
@@ -101,7 +99,18 @@ class Form(QDialog):
         self.button_erase = QPushButton(QIcon("res/eraser.ico"), "")
 
         # Create layout and add widgets
+        palette_layout = QHBoxLayout()
+        palette_layout.addWidget(QLabel("Foreground color:"))
+        for palette in range(0, ZXAttribute.paletteCount()):
+            for index in range(0, ZXAttribute.paletteSize()):
+                button = QCheckBox()
+                color = QColor(*ZXAttribute.getPaletteColor(index, palette))
+                button.setStyleSheet("background-color: {}".format(color.name()))
+                palette_layout.addWidget(button)
+
         layout = QVBoxLayout()
+        layout.addLayout(palette_layout)
+        layout.addSpacing(10)
         layout.addWidget(self.button_draw)
         layout.addWidget(self.button_erase)
         layout.addWidget(RetroDrawWidget())

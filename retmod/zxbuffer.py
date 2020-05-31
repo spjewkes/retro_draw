@@ -31,7 +31,7 @@ class ZXAttribute(object):
         if indexPalette == 0:
             return palette[indexColor]
         
-        return brightPalette[index]
+        return brightPalette[indexColor]
 
     @staticmethod
     def _validatePaletteColor(indexColor, indexPalette=0):
