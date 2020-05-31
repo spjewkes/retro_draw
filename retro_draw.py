@@ -5,6 +5,7 @@ from enum import Enum
 from PySide2.QtWidgets import (QApplication, QDialog, QLineEdit, QPushButton, QVBoxLayout, QWidget)
 from PySide2.QtGui import (QIcon, QPainter, QBrush, QPen, QColor, QFont, QImage, QPixmap)
 from PySide2.QtCore import QSize, QRect, QPoint, Qt
+from retmod.zxbuffer import ZXSpectrumBuffer
 
 class DrawingMode(Enum):
     DRAW = 1
@@ -34,8 +35,8 @@ class RetroDrawWidget(QWidget):
 
         self.guide = QPixmap("baboon.bmp")
 
-        self.drawable = QImage(self.canvasSize, QImage.Format_RGBA8888)
-        self.drawable.fill(QColor(255, 255, 255, 255))
+        
+        self.drawable = ZXSpectrumBuffer()
 
         self.setCursor(Qt.CrossCursor)
 
@@ -55,7 +56,7 @@ class RetroDrawWidget(QWidget):
         painter = QPainter(self)
         rectTarget = self.rect()
         rectSource = QRect(QPoint(0, 0), self.canvasSize)
-        painter.drawImage(rectTarget, self.drawable, rectSource)
+        painter.drawPixmap(rectTarget, self.drawable.qpixmap, rectSource)
 
         painter.setOpacity(self.guideOpacity)
         painter.drawPixmap(rectTarget, self.guide, self.guide.rect())
@@ -84,13 +85,13 @@ class RetroDrawWidget(QWidget):
     def doDraw(self, localPos):
         if localPos.x() >= 0.0 and localPos.x() < self.screenSize.width() and \
            localPos.y() >= 0.0 and localPos.y() < self.screenSize.height():
-            x = localPos.x() / 4
-            y = localPos.y() / 4
+            x = localPos.x() // 4
+            y = localPos.y() // 4
 
             if self.drawMode == DrawingMode.DRAW:
-                self.drawable.setPixelColor(x, y, self.drawColor)
+                self.drawable.setPixel(x, y, self.drawColor, 2, 0)
             elif self.drawMode == DrawingMode.ERASE:
-                self.drawable.setPixelColor(x, y, self.eraseColor)
+                self.drawable.erasePixel(x, y, self.drawColor, 2, 0)
 
             self.update(self.rect())
 
