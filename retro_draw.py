@@ -86,9 +86,9 @@ class RetroDrawWidget(QWidget):
             y = localPos.y() // 4
 
             if self.drawMode == DrawingMode.DRAW:
-                self.drawable.setPixel(x, y, 0, 7, 0)
+                self.drawable.setPixel(x, y, 0, 2, 0)
             elif self.drawMode == DrawingMode.ERASE:
-                self.drawable.erasePixel(x, y, 0, 7, 0)
+                self.drawable.erasePixel(x, y, 0, 2, 0)
 
             self.update(self.rect())
 

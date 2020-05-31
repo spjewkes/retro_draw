@@ -23,10 +23,10 @@ class ZXAttribute(object):
 
     @staticmethod
     def getPaletteColor(indexColor, indexPalette=0):
-        palette = (QColor(0, 0, 0), QColor(0, 0, 215), QColor(215, 0, 0), QColor(215, 0, 215),
-                   QColor(0, 215, 0), QColor(0, 215, 215), QColor(215, 215, 0), QColor(215, 215, 215))
-        brightPalette = (QColor(0, 0, 0), QColor(0, 0, 255), QColor(255, 0, 0), QColor(255, 0, 255),
-                         QColor(0, 255, 0), QColor(0, 255, 255), QColor(255, 255, 0), QColor(255, 255, 255))
+        palette = ((0, 0, 0), (0, 0, 215), (215, 0, 0), (215, 0, 215),
+                   (0, 215, 0), (0, 215, 215), (215, 215, 0), (215, 215, 215))
+        brightPalette = ((0, 0, 0), (0, 0, 255), (255, 0, 0), (255, 0, 255),
+                         (0, 255, 0), (0, 255, 255), (255, 255, 0), (255, 255, 255))
 
         if indexPalette == 0:
             return palette[indexColor]
@@ -73,7 +73,7 @@ class ZXSpectrumBuffer(object):
     """
     This class defines a buffer for the ZX Spectrum.
     """
-    def __init__(self):
+    def __init__(self, fgIndex=0, bgIndex=7, paletteIndex=0):
         self._paper = Image.new("RGB", self.size.toTuple())
         self._ink = Image.new("RGB", self.size.toTuple())
         self._mask = Image.new("1", self.size.toTuple())
@@ -86,7 +86,7 @@ class ZXSpectrumBuffer(object):
             for x in range(0, self.sizeAttr.width()):
                 self._attributes[(x, y)] = ZXAttribute()
 
-        self.clear(0, 0)
+        self.clear(fgIndex, bgIndex, paletteIndex)
 
     @property
     def size(self):
@@ -112,11 +112,11 @@ class ZXSpectrumBuffer(object):
         
         im_ink = ImageDraw.Draw(self._ink)
         im_ink.rectangle([0, 0, self.size.width() - 1, self.size.height() - 1],
-                         fill=ZXAttribute.getPaletteColor(fgIndex, paletteIndex).rgb())
+                         fill=ZXAttribute.getPaletteColor(fgIndex, paletteIndex))
 
         im_paper = ImageDraw.Draw(self._paper)
         im_paper.rectangle([0, 0, self.size.width() - 1, self.size.height() - 1],
-                           fill=ZXAttribute.getPaletteColor(bgIndex, paletteIndex).rgb())
+                           fill=ZXAttribute.getPaletteColor(bgIndex, paletteIndex))
 
         im_mask = ImageDraw.Draw(self._mask)
         im_mask.rectangle([0, 0, self.size.width() - 1, self.size.height() - 1],
@@ -132,14 +132,14 @@ class ZXSpectrumBuffer(object):
             self._attributes[(x, y)].ink = fgIndex
             im_ink = ImageDraw.Draw(self._ink)
             im_ink.rectangle([pos[0], pos[1], pos[0]+7, pos[1]+7],
-                             fill=ZXAttribute.getPaletteColor(fgIndex, paletteIndex).rgb())
+                             fill=ZXAttribute.getPaletteColor(fgIndex, paletteIndex))
             self._needsUpdate = True
 
         if self._attributes[(x, y)].paper != bgIndex:
             self._attributes[(x, y)].paper = bgIndex
             im_paper = ImageDraw.Draw(self._paper)
             im_paper.rectangle([pos[0], pos[1], pos[0]+7, pos[1]+7],
-                               fill=ZXAttribute.getPaletteColor(bgIndex, paletteIndex).rgb())
+                               fill=ZXAttribute.getPaletteColor(bgIndex, paletteIndex))
             self._needsUpdate = True
 
     def setPixel(self, x, y, fgIndex, bgIndex, paletteIndex=0):
