@@ -131,14 +131,14 @@ class ZXSpectrumBuffer(object):
         if self._attributes[(x, y)].ink != fgIndex:
             self._attributes[(x, y)].ink = fgIndex
             im_ink = ImageDraw.Draw(self._ink)
-            im_ink.rectangle([pos[0], pos[1], pos[0]+8, pos[1]+8],
+            im_ink.rectangle([pos[0], pos[1], pos[0]+7, pos[1]+7],
                              fill=ZXAttribute.getPaletteColor(fgIndex, paletteIndex).rgb())
             self._needsUpdate = True
 
         if self._attributes[(x, y)].paper != bgIndex:
             self._attributes[(x, y)].paper = bgIndex
             im_paper = ImageDraw.Draw(self._paper)
-            im_paper.rectangle([pos[0], pos[1], pos[0]+8, pos[1]+8],
+            im_paper.rectangle([pos[0], pos[1], pos[0]+7, pos[1]+7],
                                fill=ZXAttribute.getPaletteColor(bgIndex, paletteIndex).rgb())
             self._needsUpdate = True
 

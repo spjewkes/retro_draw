@@ -40,9 +40,6 @@ class RetroDrawWidget(QWidget):
 
         self.setCursor(Qt.CrossCursor)
 
-        self.drawColor = QColor(0, 0, 0, 255)
-        self.eraseColor = QColor(255, 255, 255, 255)
-
         self.drawingEnabled = False
         self.drawMode = DrawingMode.DRAW
 
@@ -89,9 +86,9 @@ class RetroDrawWidget(QWidget):
             y = localPos.y() // 4
 
             if self.drawMode == DrawingMode.DRAW:
-                self.drawable.setPixel(x, y, self.drawColor, 2, 0)
+                self.drawable.setPixel(x, y, 0, 7, 0)
             elif self.drawMode == DrawingMode.ERASE:
-                self.drawable.erasePixel(x, y, self.drawColor, 2, 0)
+                self.drawable.erasePixel(x, y, 0, 7, 0)
 
             self.update(self.rect())
 
