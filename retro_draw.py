@@ -2,7 +2,7 @@
 
 import sys
 from enum import Enum
-from PySide2.QtWidgets import QApplication, QDialog, QLineEdit, QPushButton, QVBoxLayout, QWidget, QHBoxLayout, QLabel, QCheckBox
+from PySide2.QtWidgets import QApplication, QDialog, QLineEdit, QPushButton, QVBoxLayout, QWidget, QHBoxLayout, QLabel, QCheckBox, QButtonGroup, QGroupBox
 from PySide2.QtGui import QIcon, QPainter, QBrush, QPen, QColor, QFont, QImage, QPixmap
 from PySide2.QtCore import QSize, QRect, QPoint, Qt
 from retmod.zxbuffer import ZXSpectrumBuffer, ZXAttribute
@@ -10,6 +10,33 @@ from retmod.zxbuffer import ZXSpectrumBuffer, ZXAttribute
 class DrawingMode(Enum):
     DRAW = 1
     ERASE = 2
+
+class PaletteSelectorLayout(QGroupBox):
+    """
+    Qt Layout class for a palette
+    """
+    def __init__(self, title, parent=None):
+        super(PaletteSelectorLayout, self).__init__(title, parent)
+        
+        self._palette_group = QButtonGroup()
+        self._palette_group.setExclusive(True)
+
+        palette_vert_layout = QVBoxLayout()
+        self.setLayout(palette_vert_layout)
+
+        for palette in range(0, ZXAttribute.paletteCount()):
+            palette_horiz_layout = QHBoxLayout()
+            palette_vert_layout.addLayout(palette_horiz_layout)
+
+            for index in range(0, ZXAttribute.paletteSize()):
+                button = QCheckBox()
+                color = QColor(*ZXAttribute.getPaletteColor(index, palette))
+                button.setStyleSheet("background-color: {}".format(color.name()))
+
+                self._palette_group.addButton(button)
+                palette_horiz_layout.addWidget(button)
+
+        self._palette_group.button(-2).setCheckState(Qt.Checked)
 
 class RetroDrawWidget(QWidget):
     """
@@ -98,18 +125,13 @@ class Form(QDialog):
         self.button_draw = QPushButton(QIcon("res/draw.ico"), "")
         self.button_erase = QPushButton(QIcon("res/eraser.ico"), "")
 
-        # Create layout and add widgets
-        palette_layout = QHBoxLayout()
-        palette_layout.addWidget(QLabel("Foreground color:"))
-        for palette in range(0, ZXAttribute.paletteCount()):
-            for index in range(0, ZXAttribute.paletteSize()):
-                button = QCheckBox()
-                color = QColor(*ZXAttribute.getPaletteColor(index, palette))
-                button.setStyleSheet("background-color: {}".format(color.name()))
-                palette_layout.addWidget(button)
+        palettes = QHBoxLayout()
+        palettes.addWidget(PaletteSelectorLayout("Foreground color:"))
+        palettes.addWidget(PaletteSelectorLayout("Background color:"))
+        
 
         layout = QVBoxLayout()
-        layout.addLayout(palette_layout)
+        layout.addLayout(palettes)
         layout.addSpacing(10)
         layout.addWidget(self.button_draw)
         layout.addWidget(self.button_erase)
