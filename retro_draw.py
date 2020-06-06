@@ -4,7 +4,7 @@ import sys
 from enum import Enum
 from PySide2.QtWidgets import QApplication, QDialog, QLineEdit, QPushButton, QVBoxLayout, QWidget, QHBoxLayout, QLabel, QCheckBox, QButtonGroup, QGroupBox
 from PySide2.QtGui import QIcon, QPainter, QBrush, QPen, QColor, QFont, QImage, QPixmap
-from PySide2.QtCore import QSize, QRect, QPoint, Qt
+from PySide2.QtCore import QSize, QRect, QPoint, Qt, Slot
 from retmod.zxbuffer import ZXSpectrumBuffer, ZXAttribute
 
 class DrawingMode(Enum):
@@ -15,28 +15,85 @@ class PaletteSelectorLayout(QGroupBox):
     """
     Qt Layout class for a palette
     """
-    def __init__(self, title, parent=None):
-        super(PaletteSelectorLayout, self).__init__(title, parent)
+    def __init__(self, fgIndex=0, bgIndex=0, palette=0, parent=None):
+        super(PaletteSelectorLayout, self).__init__("Palette Selector", parent)
         
-        self._palette_group = QButtonGroup()
-        self._palette_group.setExclusive(True)
+        if ZXAttribute.paletteCount() != 2:
+            raise Exception("The palette selector is current designed for 2 palettes only")
 
-        palette_vert_layout = QVBoxLayout()
-        self.setLayout(palette_vert_layout)
+        self._bright = palette
+        self._fgIndex = fgIndex
+        self._bgIndex = bgIndex
 
-        for palette in range(0, ZXAttribute.paletteCount()):
-            palette_horiz_layout = QHBoxLayout()
-            palette_vert_layout.addLayout(palette_horiz_layout)
+        vert_layout = QVBoxLayout()
+        self.setLayout(vert_layout)
 
-            for index in range(0, ZXAttribute.paletteSize()):
-                button = QCheckBox()
-                color = QColor(*ZXAttribute.getPaletteColor(index, palette))
-                button.setStyleSheet("background-color: {}".format(color.name()))
+        # Add check box to select brightness
+        bright_select = QCheckBox("Bright")
+        vert_layout.addWidget(bright_select)
+        if palette == 1:
+            bright_select.setChecked(True)
+        bright_select.clicked.connect(self._brightSelect)
 
-                self._palette_group.addButton(button)
-                palette_horiz_layout.addWidget(button)
+        vert_layout.addSpacing(10)
 
-        self._palette_group.button(-2).setCheckState(Qt.Checked)
+        # Foreground color checkboxes
+        vert_layout.addWidget(QLabel("Foreground color:"))
+        self._fg_group = QButtonGroup()
+        self._fg_group.setExclusive(True)
+        self._createLayout(vert_layout, self._fg_group, self._fgIndexSelect, fgIndex)
+
+        vert_layout.addSpacing(10)
+
+        # Background color checkboxes
+        vert_layout.addWidget(QLabel("Background color:"))
+        self._bg_group = QButtonGroup()
+        self._bg_group.setExclusive(True)
+        self._createLayout(vert_layout, self._bg_group, self._bgIndexSelect, bgIndex)
+
+    def _createLayout(self, vert_layout, buttonGroup, clickSlot, setIndex):
+        horiz_layout = QHBoxLayout()
+        vert_layout.addLayout(horiz_layout)
+
+        for index in range(0, ZXAttribute.paletteSize()):
+            button = QCheckBox()
+            color = QColor(*ZXAttribute.getPaletteColor(index, 1))
+            button.setStyleSheet("background-color: {}".format(color.name()))
+
+            if index == setIndex:
+                button.setChecked(True)
+
+            buttonGroup.addButton(button, index)
+            horiz_layout.addWidget(button)
+
+            button.clicked.connect(clickSlot)
+
+    @Slot()
+    def _brightSelect(self, checked):
+        if not checked:
+            self._bright = 0
+        else:
+            self._bright = 1
+
+    @Slot()
+    def _fgIndexSelect(self, checked):
+        self._fgIndex = self._fg_group.id(self.sender())
+
+    @Slot()
+    def _bgIndexSelect(self, checked):
+        self._bgIndex = self._bg_group.id(self.sender())
+
+    @property
+    def palette(self):
+        return self._bright
+
+    @property
+    def fgIndex(self):
+        return self._fgIndex
+
+    @property
+    def bgIndex(self):
+        return self._bgIndex
 
 class RetroDrawWidget(QWidget):
     """
@@ -122,34 +179,17 @@ class Form(QDialog):
         super(Form, self).__init__(parent)
         self.setWindowTitle("Drawing App")
 
-        self.button_draw = QPushButton(QIcon("res/draw.ico"), "")
-        self.button_erase = QPushButton(QIcon("res/eraser.ico"), "")
-
-        palettes = QHBoxLayout()
-        palettes.addWidget(PaletteSelectorLayout("Foreground color:"))
-        palettes.addWidget(PaletteSelectorLayout("Background color:"))
-        
+        fgIndex = 0
+        bgIndex = 2
+        palette = 1
 
         layout = QVBoxLayout()
-        layout.addLayout(palettes)
+        layout.addWidget(PaletteSelectorLayout(fgIndex, bgIndex, palette))
         layout.addSpacing(10)
-        layout.addWidget(self.button_draw)
-        layout.addWidget(self.button_erase)
         layout.addWidget(RetroDrawWidget())
 
         # Set dialog layout
         self.setLayout(layout)
-
-        self.button_draw.clicked.connect(self.drawMode)
-        self.button_erase.clicked.connect(self.eraseMode)
-
-        self.mode = None
-
-    def drawMode(self):
-        self.mode = "draw"
-
-    def eraseMode(self):
-        self.mode = "erase"
 
 if __name__ == "__main__":
     # Create the Qt Application
