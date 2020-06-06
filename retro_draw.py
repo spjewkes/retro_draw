@@ -15,7 +15,7 @@ class PaletteSelectorLayout(QGroupBox):
     """
     Qt Layout class for a palette
     """
-    def __init__(self, fgIndex=0, bgIndex=0, palette=0, parent=None):
+    def __init__(self, fgIndex, bgIndex, palette, informFunction, parent=None):
         super(PaletteSelectorLayout, self).__init__("Palette Selector", parent)
         
         if ZXAttribute.paletteCount() != 2:
@@ -24,6 +24,7 @@ class PaletteSelectorLayout(QGroupBox):
         self._bright = palette
         self._fgIndex = fgIndex
         self._bgIndex = bgIndex
+        self._informFunction = informFunction
 
         vert_layout = QVBoxLayout()
         self.setLayout(vert_layout)
@@ -74,14 +75,17 @@ class PaletteSelectorLayout(QGroupBox):
             self._bright = 0
         else:
             self._bright = 1
+        self._informFunction(self.fgIndex, self.bgIndex, self.palette)
 
     @Slot()
     def _fgIndexSelect(self, checked):
         self._fgIndex = self._fg_group.id(self.sender())
+        self._informFunction(self.fgIndex, self.bgIndex, self.palette)
 
     @Slot()
     def _bgIndexSelect(self, checked):
         self._bgIndex = self._bg_group.id(self.sender())
+        self._informFunction(self.fgIndex, self.bgIndex, self.palette)
 
     @property
     def palette(self):
@@ -99,10 +103,14 @@ class RetroDrawWidget(QWidget):
     """
     Defines widget for displaying and handling all retro drawing.
     """
-    def __init__(self, parent=None):
+    def __init__(self, fgIndex, bgIndex, palette, parent=None):
         super(RetroDrawWidget, self).__init__(parent)
 
         self.canvasSize = QSize(256, 192)
+        self.fgIndex = fgIndex
+        self.bgIndex = bgIndex
+        self.palette = palette
+
         self.scale = 4
         self.screenSize = self.canvasSize * self.scale
         self.guideOpacity = 0.2
@@ -168,11 +176,16 @@ class RetroDrawWidget(QWidget):
             y = localPos.y() // 4
 
             if self.drawMode == DrawingMode.DRAW:
-                self.drawable.setPixel(x, y, 0, 2, 0)
+                self.drawable.setPixel(x, y, self.fgIndex, self.bgIndex, self.palette)
             elif self.drawMode == DrawingMode.ERASE:
-                self.drawable.erasePixel(x, y, 0, 2, 0)
+                self.drawable.erasePixel(x, y, self.fgIndex, self.bgIndex, self.palette)
 
             self.update(self.rect())
+
+    def setColor(self, fgIndex, bgIndex, palette):
+        self.fgIndex = fgIndex
+        self.bgIndex = bgIndex
+        self.palette = palette
 
 class Form(QDialog):
     def __init__(self, parent=None):
@@ -182,11 +195,13 @@ class Form(QDialog):
         fgIndex = 0
         bgIndex = 2
         palette = 1
+        retroWidget = RetroDrawWidget(fgIndex, bgIndex, palette)
+        paletteWidget = PaletteSelectorLayout(fgIndex, bgIndex, palette, retroWidget.setColor)
 
         layout = QVBoxLayout()
-        layout.addWidget(PaletteSelectorLayout(fgIndex, bgIndex, palette))
+        layout.addWidget(paletteWidget)
         layout.addSpacing(10)
-        layout.addWidget(RetroDrawWidget())
+        layout.addWidget(retroWidget)
 
         # Set dialog layout
         self.setLayout(layout)
