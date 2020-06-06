@@ -23,8 +23,10 @@ class ZXAttribute(object):
 
     @staticmethod
     def getPaletteColor(indexColor, indexPalette=0):
-        palette = ((0, 0, 0), (0, 0, 215), (215, 0, 0), (215, 0, 215),
-                   (0, 215, 0), (0, 215, 215), (215, 215, 0), (215, 215, 215))
+        palette = ((0, 0, 0), (0, 0, 115), (115, 0, 0), (115, 0, 115),
+                   (0, 115, 0), (0, 115, 115), (115, 115, 0), (115, 115, 115))
+        # palette = ((0, 0, 0), (0, 0, 215), (215, 0, 0), (215, 0, 215),
+        #            (0, 215, 0), (0, 215, 215), (215, 215, 0), (215, 215, 215))
         brightPalette = ((0, 0, 0), (0, 0, 255), (255, 0, 0), (255, 0, 255),
                          (0, 255, 0), (0, 255, 255), (255, 255, 0), (255, 255, 255))
 
@@ -124,30 +126,38 @@ class ZXSpectrumBuffer(object):
 
         self._needsUpdate = True
 
-    def setAttr(self, x, y, fgIndex, bgIndex, paletteIndex=0):
+    def setAttr(self, x, y, fgIndex, bgIndex, paletteIndex):
         pos = (x * 8, y * 8)
 
         # This does not validate for speed purposes
-        if self._attributes[(x, y)].ink != fgIndex:
-            self._attributes[(x, y)].ink = fgIndex
+
+        attr = self._attributes[(x, y)]
+
+        paletteChanged = False
+        if attr.palette != paletteIndex:
+            paletteChanged = True
+            attr.palette = paletteIndex
+
+        if attr.ink != fgIndex or paletteChanged:
+            attr.ink = fgIndex
             im_ink = ImageDraw.Draw(self._ink)
             im_ink.rectangle([pos[0], pos[1], pos[0]+7, pos[1]+7],
                              fill=ZXAttribute.getPaletteColor(fgIndex, paletteIndex))
             self._needsUpdate = True
 
-        if self._attributes[(x, y)].paper != bgIndex:
-            self._attributes[(x, y)].paper = bgIndex
+        if attr.paper != bgIndex or paletteChanged:
+            attr.paper = bgIndex
             im_paper = ImageDraw.Draw(self._paper)
             im_paper.rectangle([pos[0], pos[1], pos[0]+7, pos[1]+7],
                                fill=ZXAttribute.getPaletteColor(bgIndex, paletteIndex))
             self._needsUpdate = True
 
-    def setPixel(self, x, y, fgIndex, bgIndex, paletteIndex=0):
+    def setPixel(self, x, y, fgIndex, bgIndex, paletteIndex):
         self.setAttr(x // 8, y // 8, fgIndex, bgIndex, paletteIndex)
         self._mask.putpixel((int(x), int(y)), 1)
         self._needsUpdate = True
 
-    def erasePixel(self, x, y, fgIndex, bgIndex, paletteIndex=0):
+    def erasePixel(self, x, y, fgIndex, bgIndex, paletteIndex):
         self.setAttr(x // 8, y // 8, fgIndex, bgIndex, paletteIndex)
         self._mask.putpixel((int(x), int(y)), 0)
         self._needsUpdate = True
