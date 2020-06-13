@@ -87,6 +87,11 @@ class ZXSpectrumBuffer(object):
                 self._attributes[(x, y)] = ZXAttribute()
 
         self.clear(fgIndex, bgIndex, paletteIndex)
+        
+    def _update(self):
+        if self._needsUpdate:
+            self._final = ImageQt(Image.composite(self._ink, self._paper, self._mask))
+            self._needsUpdate = False
 
     @property
     def size(self):
@@ -95,12 +100,10 @@ class ZXSpectrumBuffer(object):
     @property
     def sizeAttr(self):
         return QSize(32, 24)
+    
     @property
     def qpixmap(self):
-        if self._needsUpdate:
-            self._final = ImageQt(Image.composite(self._ink, self._paper, self._mask))
-            self._needsUpdate = False
-
+        self._update()
         return QtGui.QPixmap.fromImage(self._final)
 
     def clear(self, fgIndex, bgIndex, paletteIndex=0):
@@ -159,3 +162,7 @@ class ZXSpectrumBuffer(object):
         self.setAttr(x // 8, y // 8, fgIndex, bgIndex, paletteIndex)
         self._mask.putpixel((int(x), int(y)), 0)
         self._needsUpdate = True
+        
+    def saveBuffer(self, filename, format=None):
+        self._update()
+        self._final.save(filename, format)

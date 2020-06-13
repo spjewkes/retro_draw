@@ -116,7 +116,7 @@ class RetroDrawWidget(QWidget):
         self.guideOpacity = 0.2
 
         self.grid = QImage(self.screenSize, QImage.Format_RGBA8888)
-        self.grid.fill(QColor(255, 255, 255, 0))
+        self.grid.fill(QColor(0, 0, 0, 0))
         for y in range(0, self.screenSize.height()):
             for x in range(0, self.screenSize.width(), 8 * self.scale):
                 self.grid.setPixelColor(x, y, QColor(0, 0, 0, 255))
@@ -126,7 +126,7 @@ class RetroDrawWidget(QWidget):
                 self.grid.setPixelColor(x, y, QColor(0, 0, 0, 255))
 
         self.guide = None
-        self.guide = QPixmap("baboon.bmp")
+        # self.guide = QPixmap("baboon.bmp")
         self.drawable = ZXSpectrumBuffer()
 
         self.setCursor(Qt.CrossCursor)
@@ -146,10 +146,10 @@ class RetroDrawWidget(QWidget):
         rectSource = QRect(QPoint(0, 0), self.canvasSize)
         painter.drawPixmap(rectTarget, self.drawable.qpixmap, rectSource)
 
-        painter.setOpacity(self.guideOpacity)
-        if self.guide:
-             painter.drawPixmap(rectTarget, self.guide, self.guide.rect())
-        painter.drawImage(rectTarget, self.grid, rectTarget)
+        # painter.setOpacity(self.guideOpacity)
+        # if self.guide:
+        #      painter.drawPixmap(rectTarget, self.guide, self.guide.rect())
+        # painter.drawImage(rectTarget, self.grid, rectTarget)
 
     def mousePressEvent(self, event):
         if event.button() == Qt.LeftButton:
@@ -188,6 +188,9 @@ class RetroDrawWidget(QWidget):
         self.fgIndex = fgIndex
         self.bgIndex = bgIndex
         self.palette = palette
+        
+    def saveImage(self, filename, format=None):
+        self.drawable.saveBuffer(filename)
 
 class Form(QDialog):
     def __init__(self, parent=None):
@@ -197,16 +200,28 @@ class Form(QDialog):
         fgIndex = 0
         bgIndex = 2
         palette = 1
-        retroWidget = RetroDrawWidget(fgIndex, bgIndex, palette)
-        paletteWidget = PaletteSelectorLayout(fgIndex, bgIndex, palette, retroWidget.setColor)
+        self._retroWidget = RetroDrawWidget(fgIndex, bgIndex, palette)
+        self._paletteWidget = PaletteSelectorLayout(fgIndex, bgIndex, palette, self._retroWidget.setColor)
+
+        buttons = QHBoxLayout()
+        save_button = QPushButton("Save")
+        save_button.clicked.connect(self._saveImage)
+        
+        buttons.addWidget(save_button)
 
         layout = QVBoxLayout()
-        layout.addWidget(paletteWidget)
+        layout.addLayout(buttons)
         layout.addSpacing(10)
-        layout.addWidget(retroWidget)
+        layout.addWidget(self._paletteWidget)
+        layout.addSpacing(10)
+        layout.addWidget(self._retroWidget)
 
         # Set dialog layout
         self.setLayout(layout)
+        
+    @Slot()
+    def _saveImage(self):
+        self._retroWidget.saveImage("output.png")
 
 if __name__ == "__main__":
     # Create the Qt Application
