@@ -38,6 +38,7 @@ class RetroDrawWidget(QWidget):
         for x in range(0, self.screenSize.width()):
             for y in range(0, self.screenSize.height(), 8 * self.scale):
                 self.grid.setPixelColor(x, y, QColor(0, 0, 0, 255))
+        self._gridEnabled = True
 
         self._guide = None
         self.drawable = ZXSpectrumBuffer()
@@ -65,7 +66,8 @@ class RetroDrawWidget(QWidget):
         painter.setOpacity(self.guideOpacity)
         if self._guide:
              painter.drawPixmap(rectTarget, self._guide, self._guide.rect())
-        painter.drawImage(rectTarget, self.grid, rectTarget)
+        if self._gridEnabled:
+            painter.drawImage(rectTarget, self.grid, rectTarget)
 
         painter.end()
 
@@ -113,6 +115,10 @@ class RetroDrawWidget(QWidget):
     def setGuide(self, filename):
         self._guide = QPixmap(filename)
         self.repaint()
+        
+    def setGrid(self, checked):
+        self._gridEnabled = checked
+        self.repaint()
 
 class Form(QDialog):
     def __init__(self, parent=None):
@@ -132,6 +138,11 @@ class Form(QDialog):
         load_guide_button = QPushButton("Load guide")
         load_guide_button.clicked.connect(self._setGuide)
         buttons.addWidget(load_guide_button)        
+        enable_grid_check = QCheckBox("Grid Enabled")
+        enable_grid_check.setChecked(True)
+        enable_grid_check.clicked.connect(self._setGrid)
+        self._retroWidget.setGrid(True)
+        buttons.addWidget(enable_grid_check)
 
         layout = QVBoxLayout()
         layout.addLayout(buttons)
@@ -152,6 +163,10 @@ class Form(QDialog):
         filename = QFileDialog.getOpenFileName(self, "Choose guide image", ".", "Image Files (*.png *.jpg *.bmp)")
         if filename[0]:
             self._retroWidget.setGuide(filename[0])
+            
+    @Slot()
+    def _setGrid(self, checked):
+        self._retroWidget.setGrid(checked)
 
 if __name__ == "__main__":
     # Create the Qt Application
