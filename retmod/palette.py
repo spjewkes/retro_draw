@@ -10,7 +10,7 @@ class PaletteSelectorLayout(QGroupBox):
     Qt Layout class for a palette
     """
     def __init__(self, fgIndex, bgIndex, palette, informFunction, parent=None):
-        super(PaletteSelectorLayout, self).__init__("Palette Selector", parent)
+        super(PaletteSelectorLayout, self).__init__("", parent)
         
         if ZXAttribute.paletteCount() != 2:
             raise Exception("The palette selector is current designed for 2 palettes only")
@@ -20,11 +20,14 @@ class PaletteSelectorLayout(QGroupBox):
         self._bgIndex = bgIndex
         self._informFunction = informFunction
 
-        vert_layout = QVBoxLayout()
+        vert_layout = QVBoxLayout()   
         self.setLayout(vert_layout)
 
+        vert_layout.addWidget(QLabel("Palette Selector:"))
+        vert_layout.addSpacing(20)
+
         # Add check box to select brightness
-        bright_select = QCheckBox("Bright")
+        bright_select = QCheckBox("Bright Enabled")
         vert_layout.addWidget(bright_select)
         if palette == 1:
             bright_select.setChecked(True)
@@ -33,22 +36,22 @@ class PaletteSelectorLayout(QGroupBox):
         vert_layout.addSpacing(10)
 
         # Foreground color checkboxes
-        vert_layout.addWidget(QLabel("Foreground color:"))
         self._fg_group = QButtonGroup()
         self._fg_group.setExclusive(True)
-        self._createLayout(vert_layout, self._fg_group, self._fgIndexSelect, fgIndex)
+        self._createLayout(vert_layout, "Foreground color:", self._fg_group, self._fgIndexSelect, fgIndex)
 
         vert_layout.addSpacing(10)
 
         # Background color checkboxes
-        vert_layout.addWidget(QLabel("Background color:"))
         self._bg_group = QButtonGroup()
         self._bg_group.setExclusive(True)
-        self._createLayout(vert_layout, self._bg_group, self._bgIndexSelect, bgIndex)
+        self._createLayout(vert_layout, "Background color:", self._bg_group, self._bgIndexSelect, bgIndex)
 
-    def _createLayout(self, vert_layout, buttonGroup, clickSlot, setIndex):
+    def _createLayout(self, vert_layout, labelText, buttonGroup, clickSlot, setIndex):
         horiz_layout = QHBoxLayout()
         vert_layout.addLayout(horiz_layout)
+
+        horiz_layout.addWidget(QLabel(labelText))
 
         for index in range(0, ZXAttribute.paletteSize()):
             button = QCheckBox()
