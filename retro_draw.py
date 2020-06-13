@@ -2,7 +2,8 @@
 
 import sys
 from enum import Enum
-from PySide2.QtWidgets import QApplication, QDialog, QLineEdit, QPushButton, QVBoxLayout, QWidget, QHBoxLayout, QLabel, QCheckBox, QButtonGroup, QGroupBox
+from PySide2.QtWidgets import QApplication, QDialog, QLineEdit, QPushButton, QVBoxLayout, QWidget, QHBoxLayout, \
+    QLabel, QCheckBox, QButtonGroup, QGroupBox, QFileDialog
 from PySide2.QtGui import QIcon, QPainter, QBrush, QPen, QColor, QFont, QImage, QPixmap
 from PySide2.QtCore import QSize, QRect, QPoint, Qt, Slot
 from retmod.zxbuffer import ZXSpectrumBuffer, ZXAttribute
@@ -106,9 +107,6 @@ class RetroDrawWidget(QWidget):
     def __init__(self, fgIndex, bgIndex, palette, parent=None):
         super(RetroDrawWidget, self).__init__(parent)
 
-        # self.setAttribute(Qt.WA_NoSystemBackground, True)
-        # self.setAttribute(Qt.WA_TranslucentBackground, True)
-
         self.canvasSize = QSize(256, 192)
         self.fgIndex = fgIndex
         self.bgIndex = bgIndex
@@ -128,8 +126,7 @@ class RetroDrawWidget(QWidget):
             for y in range(0, self.screenSize.height(), 8 * self.scale):
                 self.grid.setPixelColor(x, y, QColor(0, 0, 0, 255))
 
-        self.guide = None
-        # self.guide = QPixmap("baboon.bmp")
+        self._guide = None
         self.drawable = ZXSpectrumBuffer()
 
         self.setCursor(Qt.CrossCursor)
@@ -147,16 +144,14 @@ class RetroDrawWidget(QWidget):
         super(RetroDrawWidget, self).paintEvent(event)
 
         painter = QPainter(self)
-        # painter.setRenderHint(QPainter.LosslessImageRendering, False)
-        # painter.setRenderHint(QPainter.SmoothPixmapTransform, True)
-        # painter.setRenderHint(QPainter.Qt4CompatiblePainting, True)
+
         rectTarget = self.rect()
         rectSource = QRect(QPoint(0, 0), self.canvasSize)
         painter.drawPixmap(rectTarget, self.drawable.qpixmap, rectSource)
 
         painter.setOpacity(self.guideOpacity)
-        if self.guide:
-             painter.drawPixmap(rectTarget, self.guide, self.guide.rect())
+        if self._guide:
+             painter.drawPixmap(rectTarget, self._guide, self._guide.rect())
         painter.drawImage(rectTarget, self.grid, rectTarget)
 
         painter.end()
@@ -201,6 +196,10 @@ class RetroDrawWidget(QWidget):
         
     def saveImage(self, filename, format=None):
         self.drawable.saveBuffer(filename)
+        
+    def setGuide(self, filename):
+        self._guide = QPixmap(filename)
+        self.repaint()
 
 class Form(QDialog):
     def __init__(self, parent=None):
@@ -216,8 +215,10 @@ class Form(QDialog):
         buttons = QHBoxLayout()
         save_button = QPushButton("Save")
         save_button.clicked.connect(self._saveImage)
-        
         buttons.addWidget(save_button)
+        load_guide_button = QPushButton("Load guide")
+        load_guide_button.clicked.connect(self._setGuide)
+        buttons.addWidget(load_guide_button)        
 
         layout = QVBoxLayout()
         layout.addLayout(buttons)
@@ -232,6 +233,12 @@ class Form(QDialog):
     @Slot()
     def _saveImage(self):
         self._retroWidget.saveImage("output.png")
+        
+    @Slot()
+    def _setGuide(self):
+        filename = QFileDialog.getOpenFileName(self, "Choose guide image", ".", "Image Files (*.png *.jpg *.bmp)")
+        if filename[0]:
+            self._retroWidget.setGuide(filename[0])
 
 if __name__ == "__main__":
     # Create the Qt Application
