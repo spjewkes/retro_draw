@@ -125,6 +125,7 @@ class RetroDrawWidget(QWidget):
             for y in range(0, self.screenSize.height(), 8 * self.scale):
                 self.grid.setPixelColor(x, y, QColor(0, 0, 0, 255))
 
+        self.guide = None
         self.guide = QPixmap("baboon.bmp")
         self.drawable = ZXSpectrumBuffer()
 
@@ -146,7 +147,8 @@ class RetroDrawWidget(QWidget):
         painter.drawPixmap(rectTarget, self.drawable.qpixmap, rectSource)
 
         painter.setOpacity(self.guideOpacity)
-        painter.drawPixmap(rectTarget, self.guide, self.guide.rect())
+        if self.guide:
+             painter.drawPixmap(rectTarget, self.guide, self.guide.rect())
         painter.drawImage(rectTarget, self.grid, rectTarget)
 
     def mousePressEvent(self, event):
