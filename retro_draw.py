@@ -106,6 +106,9 @@ class RetroDrawWidget(QWidget):
     def __init__(self, fgIndex, bgIndex, palette, parent=None):
         super(RetroDrawWidget, self).__init__(parent)
 
+        # self.setAttribute(Qt.WA_NoSystemBackground, True)
+        # self.setAttribute(Qt.WA_TranslucentBackground, True)
+
         self.canvasSize = QSize(256, 192)
         self.fgIndex = fgIndex
         self.bgIndex = bgIndex
@@ -141,15 +144,22 @@ class RetroDrawWidget(QWidget):
         return self.screenSize
 
     def paintEvent(self, event):
+        super(RetroDrawWidget, self).paintEvent(event)
+
         painter = QPainter(self)
+        # painter.setRenderHint(QPainter.LosslessImageRendering, False)
+        # painter.setRenderHint(QPainter.SmoothPixmapTransform, True)
+        # painter.setRenderHint(QPainter.Qt4CompatiblePainting, True)
         rectTarget = self.rect()
         rectSource = QRect(QPoint(0, 0), self.canvasSize)
         painter.drawPixmap(rectTarget, self.drawable.qpixmap, rectSource)
 
-        # painter.setOpacity(self.guideOpacity)
-        # if self.guide:
-        #      painter.drawPixmap(rectTarget, self.guide, self.guide.rect())
-        # painter.drawImage(rectTarget, self.grid, rectTarget)
+        painter.setOpacity(self.guideOpacity)
+        if self.guide:
+             painter.drawPixmap(rectTarget, self.guide, self.guide.rect())
+        painter.drawImage(rectTarget, self.grid, rectTarget)
+
+        painter.end()
 
     def mousePressEvent(self, event):
         if event.button() == Qt.LeftButton:
