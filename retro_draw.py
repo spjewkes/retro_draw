@@ -21,12 +21,14 @@ class RetroDrawWidget(QWidget):
         super(RetroDrawWidget, self).__init__(parent)
 
         self.canvasSize = QSize(256, 192)
+        self.canvasCenter = QPoint(self.canvasSize.width() / 2, self.canvasSize.height() / 2)
         self.fgIndex = fgIndex
         self.bgIndex = bgIndex
         self.palette = palette
 
         self.scale = 4
         self.screenSize = self.canvasSize * self.scale
+        self.screenCenter = self.canvasCenter * self.scale
 
         self.grid = QImage(self.screenSize, QImage.Format_RGBA8888)
         self.grid.fill(QColor(0, 0, 0, 0))
@@ -43,6 +45,8 @@ class RetroDrawWidget(QWidget):
         self._guide = None
         self._guideEnabled = True
         self._guideOpacity = 0.2
+        self._guideCoords = QPoint(0, 0)
+        self._guideZoom = 1.0
         
         self.drawable = ZXSpectrumBuffer()
 
@@ -67,8 +71,12 @@ class RetroDrawWidget(QWidget):
         painter.drawPixmap(rectTarget, self.drawable.qpixmap, rectSource)
 
         if self._guide and self._guideEnabled:
+            guideZoom = self._guide.scaled(self._guide.width() * self._guideZoom,
+                                           self._guide.height() * self._guideZoom, Qt.KeepAspectRatio)
+            pos = QPoint(self._guideCoords.x() + (self.screenCenter.x() - guideZoom.width() / 2),
+                         self._guideCoords.y() + (self.screenCenter.y() - guideZoom.height() / 2))
             painter.setOpacity(self._guideOpacity)
-            painter.drawPixmap(rectTarget, self._guide, self._guide.rect())
+            painter.drawPixmap(pos, guideZoom)
         if self._gridEnabled:
             painter.setOpacity(self._gridOpacity)
             painter.drawImage(rectTarget, self.grid, rectTarget)
