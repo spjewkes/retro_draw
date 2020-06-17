@@ -52,8 +52,8 @@ class RetroDrawWidget(QWidget):
 
         self.setCursor(Qt.CrossCursor)
 
-        self.drawingEnabled = False
-        self.drawMode = DrawingMode.DRAW
+        self._mousePressed = False
+        self._drawMode = DrawingMode.DRAW
 
     def sizeHint(self):
         return self.screenSize
@@ -84,23 +84,19 @@ class RetroDrawWidget(QWidget):
         painter.end()
 
     def mousePressEvent(self, event):
+        self._mousePressed = True
         if event.button() == Qt.LeftButton:
-            self.drawMode = DrawingMode.DRAW
-            self.drawing = True
+            self._drawMode = DrawingMode.DRAW
             self.doDraw(event.localPos())
         elif event.button() == Qt.RightButton:
-            self.drawMode = DrawingMode.ERASE
-            self.drawing = True
+            self._drawMode = DrawingMode.ERASE
             self.doDraw(event.localPos())
 
     def mouseReleaseEvent(self, event):
-        if event.button() == Qt.LeftButton:
-            self.drawing = False
-        elif event.button() == Qt.RightButton:
-            self.drawing = False
+        self._mousePressed = False
 
     def mouseMoveEvent(self, event):
-        if self.drawing:
+        if self._mousePressed:
             self.doDraw(event.localPos())
 
     def doDraw(self, localPos):
@@ -109,9 +105,9 @@ class RetroDrawWidget(QWidget):
             x = localPos.x() // 4
             y = localPos.y() // 4
 
-            if self.drawMode == DrawingMode.DRAW:
+            if self._drawMode == DrawingMode.DRAW:
                 self.drawable.setPixel(x, y, self.fgIndex, self.bgIndex, self.palette)
-            elif self.drawMode == DrawingMode.ERASE:
+            elif self._drawMode == DrawingMode.ERASE:
                 self.drawable.erasePixel(x, y, self.fgIndex, self.bgIndex, self.palette)
 
             self.update(self.rect())
