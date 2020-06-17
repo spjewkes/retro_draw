@@ -53,6 +53,8 @@ class RetroDrawWidget(QWidget):
         self.setCursor(Qt.CrossCursor)
 
         self._mousePressed = False
+        self._mouseLastPos = QPoint(0, 0)
+        self._mouseDelta = QPoint(0, 0)
         self._drawMode = DrawingMode.DRAW
 
     def sizeHint(self):
@@ -96,8 +98,12 @@ class RetroDrawWidget(QWidget):
         self._mousePressed = False
 
     def mouseMoveEvent(self, event):
+        self._mouseDelta = event.pos() - self._mouseLastPos
+        self._mouseLastPos = event.pos()
+        
         if self._mousePressed:
-            self.doDraw(event.localPos())
+            if self._drawMode in (DrawingMode.DRAW, DrawingMode.ERASE):
+               self.doDraw(event.localPos())
 
     def doDraw(self, localPos):
         if localPos.x() >= 0.0 and localPos.x() < self.screenSize.width() and \
