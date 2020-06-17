@@ -4,7 +4,7 @@ import sys
 from enum import Enum
 from PySide2.QtWidgets import QApplication, QDialog, QLineEdit, QPushButton, QVBoxLayout, QWidget, QHBoxLayout, \
     QLabel, QCheckBox, QButtonGroup, QGroupBox, QFileDialog, QSlider
-from PySide2.QtGui import QIcon, QPainter, QBrush, QPen, QColor, QFont, QImage, QPixmap
+from PySide2.QtGui import QIcon, QPainter, QBrush, QPen, QColor, QFont, QImage, QPixmap, QCursor
 from PySide2.QtCore import QSize, QRect, QPoint, Qt, Slot
 from retmod.zxbuffer import ZXSpectrumBuffer, ZXAttribute
 from retmod.palette import PaletteSelectorLayout
@@ -12,6 +12,7 @@ from retmod.palette import PaletteSelectorLayout
 class DrawingMode(Enum):
     DRAW = 1
     ERASE = 2
+    GUIDE_RESIZE = 3
 
 class RetroDrawWidget(QWidget):
     """
@@ -53,7 +54,7 @@ class RetroDrawWidget(QWidget):
         self.setCursor(Qt.CrossCursor)
 
         self._mousePressed = False
-        self._mouseLastPos = QPoint(0, 0)
+        self._mouseLastPos = QCursor.pos()
         self._mouseDelta = QPoint(0, 0)
         self._drawMode = DrawingMode.DRAW
 
@@ -98,13 +99,33 @@ class RetroDrawWidget(QWidget):
         self._mousePressed = False
 
     def mouseMoveEvent(self, event):
-        self._mouseDelta = event.pos() - self._mouseLastPos
-        self._mouseLastPos = event.pos()
+        self._mouseDelta = QCursor.pos() - self._mouseLastPos
+        self._mouseLastPos = QCursor.pos()
         
         if self._mousePressed:
             if self._drawMode in (DrawingMode.DRAW, DrawingMode.ERASE):
-               self.doDraw(event.localPos())
-
+                self.doDraw(event.localPos())
+            elif self._drawMode == DrawingMode.GUIDE_RESIZE:
+                self._guideCoords += self._mouseDelta
+                self.update(self.rect())
+                
+    def wheelEvent(self, event):
+        if self._mousePressed:
+            if self._drawMode == DrawingMode.GUIDE_RESIZE:
+                delta = event.pixelDelta().y() * 0.01
+                if delta != 0.0:
+                    self._guideZoom += delta
+                    self._guideZoom = self.clamp(self._guideZoom, 0.25, 4.0)
+                    self.update(self.rect())                
+    
+    @staticmethod
+    def clamp(value, min, max):
+        if value < min:
+            return min
+        elif value > max:
+            return max
+        return value
+        
     def doDraw(self, localPos):
         if localPos.x() >= 0.0 and localPos.x() < self.screenSize.width() and \
            localPos.y() >= 0.0 and localPos.y() < self.screenSize.height():
