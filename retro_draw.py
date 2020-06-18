@@ -3,7 +3,7 @@
 import sys
 from enum import Enum
 from PySide2.QtWidgets import QApplication, QDialog, QLineEdit, QPushButton, QVBoxLayout, QWidget, QHBoxLayout, \
-    QLabel, QCheckBox, QButtonGroup, QGroupBox, QFileDialog, QSlider
+    QLabel, QCheckBox, QButtonGroup, QGroupBox, QFileDialog, QSlider, QRadioButton
 from PySide2.QtGui import QIcon, QPainter, QBrush, QPen, QColor, QFont, QImage, QPixmap, QCursor
 from PySide2.QtCore import QSize, QRect, QPoint, Qt, Slot
 from retmod.zxbuffer import ZXSpectrumBuffer, ZXAttribute
@@ -12,7 +12,7 @@ from retmod.palette import PaletteSelectorLayout
 class DrawingMode(Enum):
     DRAW = 1
     ERASE = 2
-    GUIDE_RESIZE = 3
+    GUIDE = 3
 
 class MouseButton(Enum):
     NONE = 0,
@@ -115,14 +115,14 @@ class RetroDrawWidget(QWidget):
                 self.doDraw(event.localPos(), True)
             elif self._mousePressed == MouseButton.RIGHT:
                 self.doDraw(event.localPos(), False)
-        elif self._drawMode == DrawingMode.GUIDE_RESIZE:
+        elif self._drawMode == DrawingMode.GUIDE:
             if self._mousePressed == MouseButton.LEFT:
                 self._guideCoords += self._mouseDelta
                 self.update(self.rect())
                 
     def wheelEvent(self, event):
         if self._mousePressed:
-            if self._drawMode == DrawingMode.GUIDE_RESIZE:
+            if self._drawMode == DrawingMode.GUIDE:
                 delta = event.pixelDelta().y() * 0.01
                 if delta != 0.0:
                     self._guideZoom += delta
@@ -177,6 +177,9 @@ class RetroDrawWidget(QWidget):
     def setGuideOpacity(self, value):
         self._guideOpacity = value / 100.0
         self.repaint()
+        
+    def setMode(self, mode):
+        self._drawMode = mode
 
 class Form(QDialog):
     def __init__(self, parent=None):
@@ -188,6 +191,21 @@ class Form(QDialog):
         palette = 1
         self._retroWidget = RetroDrawWidget(fgIndex, bgIndex, palette)
         self._paletteWidget = PaletteSelectorLayout(fgIndex, bgIndex, palette, self._retroWidget.setColor)
+
+        modes = QHBoxLayout()
+        # Draw mode
+        draw_mode = QRadioButton("Draw Mode")
+        draw_mode.setChecked(True)
+        draw_mode.clicked.connect(self._setModeDraw)
+        modes.addWidget(draw_mode)
+        erase_mode = QRadioButton("Erase Mode")
+        erase_mode.setChecked(False)
+        erase_mode.clicked.connect(self._setModeErase)
+        modes.addWidget(erase_mode)
+        guide_mode = QRadioButton("Guide Mode")
+        guide_mode.setChecked(False)
+        guide_mode.clicked.connect(self._setModeGuide)
+        modes.addWidget(guide_mode)
 
         buttons = QHBoxLayout()
         # Save image button
@@ -234,6 +252,7 @@ class Form(QDialog):
         sliders.addWidget(grid_slider)
 
         layout = QVBoxLayout()
+        layout.addLayout(modes)
         layout.addLayout(buttons)
         layout.addLayout(sliders)
         layout.addSpacing(10)
@@ -269,6 +288,18 @@ class Form(QDialog):
     @Slot()
     def _setGuideSlider(self, value):
         self._retroWidget.setGuideOpacity(value)
+        
+    @Slot()
+    def _setModeDraw(self, checked):
+        self._retroWidget.setMode(DrawingMode.DRAW)    
+
+    @Slot()
+    def _setModeErase(self, checked):
+        self._retroWidget.setMode(DrawingMode.ERASE)    
+
+    @Slot()
+    def _setModeGuide(self, checked):
+        self._retroWidget.setMode(DrawingMode.GUIDE)    
 
 if __name__ == "__main__":
     # Create the Qt Application
