@@ -126,7 +126,7 @@ class RetroDrawWidget(QWidget):
                 delta = event.pixelDelta().y() * 0.01
                 if delta != 0.0:
                     self._guideZoom += delta
-                    self._guideZoom = self.clamp(self._guideZoom, 0.25, 4.0)
+                    self._guideZoom = self.clamp(self._guideZoom, 0.1, 8.0)
                     self.update(self.rect())                
     
     @staticmethod
