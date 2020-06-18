@@ -14,6 +14,11 @@ class DrawingMode(Enum):
     ERASE = 2
     GUIDE_RESIZE = 3
 
+class MouseButton(Enum):
+    NONE = 0,
+    LEFT = 1,
+    RIGHT = 2
+    
 class RetroDrawWidget(QWidget):
     """
     Defines widget for displaying and handling all retro drawing.
@@ -53,9 +58,9 @@ class RetroDrawWidget(QWidget):
 
         self.setCursor(Qt.CrossCursor)
 
-        self._mousePressed = False
         self._mouseLastPos = QCursor.pos()
         self._mouseDelta = QPoint(0, 0)
+        self._mousePressed = MouseButton.NONE
         self._drawMode = DrawingMode.DRAW
 
     def sizeHint(self):
@@ -87,25 +92,31 @@ class RetroDrawWidget(QWidget):
         painter.end()
 
     def mousePressEvent(self, event):
-        self._mousePressed = True
         if event.button() == Qt.LeftButton:
-            self._drawMode = DrawingMode.DRAW
-            self.doDraw(event.localPos())
+            self._mousePressed = MouseButton.LEFT
         elif event.button() == Qt.RightButton:
-            self._drawMode = DrawingMode.ERASE
-            self.doDraw(event.localPos())
+            self._mousePressed = MouseButton.RIGHT
+            
+        if self._drawMode in (DrawingMode.DRAW, DrawingMode.ERASE):
+            if self._mousePressed == MouseButton.LEFT:
+                self.doDraw(event.localPos(), True)
+            elif self._mousePressed == MouseButton.RIGHT:
+                self.doDraw(event.localPos(), False)
 
     def mouseReleaseEvent(self, event):
-        self._mousePressed = False
+        self._mousePressed = MouseButton.NONE
 
     def mouseMoveEvent(self, event):
         self._mouseDelta = QCursor.pos() - self._mouseLastPos
         self._mouseLastPos = QCursor.pos()
         
-        if self._mousePressed:
-            if self._drawMode in (DrawingMode.DRAW, DrawingMode.ERASE):
-                self.doDraw(event.localPos())
-            elif self._drawMode == DrawingMode.GUIDE_RESIZE:
+        if self._drawMode in (DrawingMode.DRAW, DrawingMode.ERASE):
+            if self._mousePressed == MouseButton.LEFT:
+                self.doDraw(event.localPos(), True)
+            elif self._mousePressed == MouseButton.RIGHT:
+                self.doDraw(event.localPos(), False)
+        elif self._drawMode == DrawingMode.GUIDE_RESIZE:
+            if self._mousePressed == MouseButton.LEFT:
                 self._guideCoords += self._mouseDelta
                 self.update(self.rect())
                 
@@ -126,15 +137,15 @@ class RetroDrawWidget(QWidget):
             return max
         return value
         
-    def doDraw(self, localPos):
+    def doDraw(self, localPos, setPixel):
         if localPos.x() >= 0.0 and localPos.x() < self.screenSize.width() and \
            localPos.y() >= 0.0 and localPos.y() < self.screenSize.height():
             x = localPos.x() // 4
             y = localPos.y() // 4
 
-            if self._drawMode == DrawingMode.DRAW:
+            if setPixel:
                 self.drawable.setPixel(x, y, self.fgIndex, self.bgIndex, self.palette)
-            elif self._drawMode == DrawingMode.ERASE:
+            else:
                 self.drawable.erasePixel(x, y, self.fgIndex, self.bgIndex, self.palette)
 
             self.update(self.rect())
