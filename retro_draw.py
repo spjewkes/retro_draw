@@ -12,7 +12,8 @@ from retmod.palette import PaletteSelectorLayout
 class DrawingMode(Enum):
     DRAW = 1
     ERASE = 2
-    GUIDE = 3
+    LINE = 3
+    GUIDE = 4
 
 class MouseButton(Enum):
     NONE = 0,
@@ -53,6 +54,9 @@ class RetroDrawWidget(QWidget):
         self._guideOpacity = 0.2
         self._guideCoords = QPoint(0, 0)
         self._guideZoom = 1.0
+
+        self._scratch = QImage(self.screenSize, QImage.Format_RGBA8888)
+        self._scratch.fill(QColor(0, 0, 0, 0))
         
         self.drawable = ZXSpectrumBuffer()
 
@@ -62,6 +66,8 @@ class RetroDrawWidget(QWidget):
         self._mouseDelta = QPoint(0, 0)
         self._mousePressed = MouseButton.NONE
         self._drawMode = DrawingMode.DRAW
+
+        self._lineState = None
 
     def sizeHint(self):
         return self.screenSize
@@ -89,6 +95,9 @@ class RetroDrawWidget(QWidget):
             painter.setOpacity(self._gridOpacity)
             painter.drawImage(rectTarget, self.grid, rectTarget)
 
+        painter.setOpacity(1.0)
+        painter.drawImage(rectTarget, self._scratch, rectTarget)
+
         painter.end()
 
     def mousePressEvent(self, event):
@@ -102,8 +111,35 @@ class RetroDrawWidget(QWidget):
                 self.doDraw(event.localPos(), True)
             elif self._mousePressed == MouseButton.RIGHT:
                 self.doDraw(event.localPos(), False)
+                
+        elif self._drawMode == DrawingMode.LINE:
+            if self._mousePressed == MouseButton.LEFT:
+                self._lineState = [event.localPos(), event.localPos()]
+                painter = QPainter(self._scratch)
+                painter.setPen(Qt.black)
+                painter.drawLine(self._lineState[0], self._lineState[1])
+                painter.end()
+                self.update(self.rect())
 
     def mouseReleaseEvent(self, event):
+        if self._drawMode == DrawingMode.LINE:
+            if self._mousePressed == MouseButton.LEFT and self._lineState:
+                self._lineState[1] = event.localPos()
+                painter = QPainter(self._scratch)
+                painter.setPen(Qt.black)
+                painter.drawLine(self._lineState[0], self._lineState[1])
+
+                x1 = self._lineState[0].x() // self.scale
+                y1 = self._lineState[0].y() // self.scale
+                x2 = self._lineState[1].x() // self.scale
+                y2 = self._lineState[1].y() // self.scale
+                self.drawable.drawLine(x1, y1, x2, y2, self.fgIndex, self.bgIndex, self.palette)
+
+                painter.end()
+                self._lineState = None
+                self._scratch.fill(QColor(0, 0, 0, 0))
+                self.update(self.rect())
+
         self._mousePressed = MouseButton.NONE
 
     def mouseMoveEvent(self, event):
@@ -115,9 +151,20 @@ class RetroDrawWidget(QWidget):
                 self.doDraw(event.localPos(), True)
             elif self._mousePressed == MouseButton.RIGHT:
                 self.doDraw(event.localPos(), False)
+                
         elif self._drawMode == DrawingMode.GUIDE:
             if self._mousePressed == MouseButton.LEFT:
                 self._guideCoords += self._mouseDelta
+                self.update(self.rect())
+                
+        elif self._drawMode == DrawingMode.LINE:
+            if self._mousePressed == MouseButton.LEFT and self._lineState:
+                painter = QPainter(self._scratch)
+                self._scratch.fill(QColor(0, 0, 0, 0))
+                painter.setPen(Qt.black)
+                self._lineState[1] = event.localPos()
+                painter.drawLine(self._lineState[0], self._lineState[1])
+                painter.end()
                 self.update(self.rect())
                 
     def wheelEvent(self, event):
@@ -140,8 +187,8 @@ class RetroDrawWidget(QWidget):
     def doDraw(self, localPos, setPixel):
         if localPos.x() >= 0.0 and localPos.x() < self.screenSize.width() and \
            localPos.y() >= 0.0 and localPos.y() < self.screenSize.height():
-            x = localPos.x() // 4
-            y = localPos.y() // 4
+            x = localPos.x() // self.scale
+            y = localPos.y() // self.scale
 
             if setPixel:
                 self.drawable.setPixel(x, y, self.fgIndex, self.bgIndex, self.palette)
@@ -202,6 +249,10 @@ class Form(QDialog):
         erase_mode.setChecked(False)
         erase_mode.clicked.connect(self._setModeErase)
         modes.addWidget(erase_mode)
+        line_mode = QRadioButton("Line Mode")
+        line_mode.setChecked(False)
+        line_mode.clicked.connect(self._setModeLine)
+        modes.addWidget(line_mode)
         guide_mode = QRadioButton("Guide Mode")
         guide_mode.setChecked(False)
         guide_mode.clicked.connect(self._setModeGuide)
@@ -296,6 +347,10 @@ class Form(QDialog):
     @Slot()
     def _setModeErase(self, checked):
         self._retroWidget.setMode(DrawingMode.ERASE)    
+
+    @Slot()
+    def _setModeLine(self, checked):
+        self._retroWidget.setMode(DrawingMode.LINE)
 
     @Slot()
     def _setModeGuide(self, checked):

@@ -168,6 +168,9 @@ class ZXSpectrumBuffer(object):
         self._mask.putpixel((int(x), int(y)), 0)
         self._needsUpdate = True
         
+    def drawLine(self, x1, y1, x2, y2, fgIndex, bgIndex, paletteIndex):
+        pass
+        
     def saveBuffer(self, filename, format=None):
         self._update()
         self._final.save(filename, format)
