@@ -4,6 +4,8 @@ from PySide2.QtCore import QSize
 from PIL import Image, ImageDraw
 from PIL.ImageQt import ImageQt
 
+from retmod.bresenham import BresenhamLine
+
 class ZXAttribute(object):
     """
     Defines the state of a ZX Spectrum attribute
@@ -169,7 +171,10 @@ class ZXSpectrumBuffer(object):
         self._needsUpdate = True
         
     def drawLine(self, x1, y1, x2, y2, fgIndex, bgIndex, paletteIndex):
-        pass
+        for x, y in BresenhamLine((x1, y1), (x2, y2)):
+            self.setAttr(x // 8, y // 8, fgIndex, bgIndex, paletteIndex)
+            self._mask.putpixel((int(x), int(y)), 1)
+        self._needsUpdate = True
         
     def saveBuffer(self, filename, format=None):
         self._update()
