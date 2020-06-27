@@ -63,7 +63,7 @@ class RetroDrawWidget(QWidget):
 
         self.setCursor(Qt.CrossCursor)
 
-        self._mouseLastPos = QCursor.pos()
+        self._mouseLastPos = self.getLocalMousePos()
         self._mouseDelta = QPoint(0, 0)
         self._mousePressed = MouseButton.NONE
         self._drawMode = DrawingMode.DOTTED
@@ -75,6 +75,9 @@ class RetroDrawWidget(QWidget):
 
     def minimumSizeHint(self):
         return self.screenSize
+    
+    def getLocalMousePos(self):
+        return self.mapFromGlobal(QCursor.pos())
 
     def paintEvent(self, event):
         super(RetroDrawWidget, self).paintEvent(event)
@@ -102,12 +105,18 @@ class RetroDrawWidget(QWidget):
         painter.end()
 
     def mousePressEvent(self, event):
+        self._mouseLastPos = self.getLocalMousePos()
+        
         if event.button() == Qt.LeftButton:
             self._mousePressed = MouseButton.LEFT
         elif event.button() == Qt.RightButton:
             self._mousePressed = MouseButton.RIGHT
             
-        if self._drawMode == DrawingMode.DOTTED:
+        if self._drawMode == DrawingMode.PEN:
+            if self._mousePressed == MouseButton.LEFT:
+                self.doDraw(event.localPos(), True)
+        
+        elif self._drawMode == DrawingMode.DOTTED:
             if self._mousePressed == MouseButton.LEFT:
                 self.doDraw(event.localPos(), True)
             elif self._mousePressed == MouseButton.RIGHT:
@@ -133,12 +142,8 @@ class RetroDrawWidget(QWidget):
                 painter = QPainter(self._scratch)
                 painter.setPen(Qt.black)
                 painter.drawLine(self._lineState[0], self._lineState[1])
-
-                x1 = self._lineState[0].x() // self.scale
-                y1 = self._lineState[0].y() // self.scale
-                x2 = self._lineState[1].x() // self.scale
-                y2 = self._lineState[1].y() // self.scale
-                self.drawable.drawLine(x1, y1, x2, y2, self.fgIndex, self.bgIndex, self.palette)
+                
+                self.doDrawLine(self._lineState[0], self._lineState[1])
 
                 painter.end()
                 self._lineState = None
@@ -148,18 +153,24 @@ class RetroDrawWidget(QWidget):
         self._mousePressed = MouseButton.NONE
 
     def mouseMoveEvent(self, event):
-        self._mouseDelta = QCursor.pos() - self._mouseLastPos
-        self._mouseLastPos = QCursor.pos()
+        oldMousePos = self._mouseLastPos
+        newMousePos = self.getLocalMousePos()
+        self._mouseDelta = newMousePos - self._mouseLastPos
+        self._mouseLastPos = newMousePos
+        
+        if self._drawMode == DrawingMode.PEN:
+            if self._mousePressed == MouseButton.LEFT:
+                self.doDrawLine(oldMousePos, newMousePos)
         
         if self._drawMode == DrawingMode.DOTTED:
             if self._mousePressed == MouseButton.LEFT:
-                self.doDraw(event.localPos(), True)
+                self.doDraw(newMousePos, True)
             elif self._mousePressed == MouseButton.RIGHT:
-                self.doDraw(event.localPos(), False)
+                self.doDraw(newMousePos, False)
         
         elif self._drawMode == DrawingMode.ERASE:
             if self._mousePressed == MouseButton.LEFT:
-                self.doDraw(event.localPos(), False)
+                self.doDraw(newMousePos, False)
                 
         elif self._drawMode == DrawingMode.GUIDE:
             if self._mousePressed == MouseButton.LEFT:
@@ -205,7 +216,15 @@ class RetroDrawWidget(QWidget):
                 self.drawable.erasePixel(x, y, self.fgIndex, self.bgIndex, self.palette)
 
             self.update(self.rect())
-
+            
+    def doDrawLine(self, localStartPos, localEndPos):
+        x1 = localStartPos.x() // self.scale
+        y1 = localStartPos.y() // self.scale
+        x2 = localEndPos.x() // self.scale
+        y2 = localEndPos.y() // self.scale
+        self.drawable.drawLine(x1, y1, x2, y2, self.fgIndex, self.bgIndex, self.palette)
+        self.update(self.rect())
+                
     def setColor(self, fgIndex, bgIndex, palette):
         self.fgIndex = fgIndex
         self.bgIndex = bgIndex
@@ -250,9 +269,13 @@ class Form(QDialog):
 
         modes = QHBoxLayout()
         # Draw mode
+        pen_mode = QRadioButton("Pen Mode")
+        pen_mode.setChecked(False)
+        pen_mode.clicked.connect(self._setModePen)
+        modes.addWidget(pen_mode)
         dotted_mode = QRadioButton("Dotted Mode")
         dotted_mode.setChecked(True)
-        dotted_mode.clicked.connect(self._setModeDraw)
+        dotted_mode.clicked.connect(self._setModeDotted)
         modes.addWidget(dotted_mode)
         erase_mode = QRadioButton("Erase Mode")
         erase_mode.setChecked(False)
@@ -348,9 +371,13 @@ class Form(QDialog):
     @Slot()
     def _setGuideSlider(self, value):
         self._retroWidget.setGuideOpacity(value)
+
+    @Slot()
+    def _setModePen(self, checked):
+        self._retroWidget.setMode(DrawingMode.PEN)
         
     @Slot()
-    def _setModeDraw(self, checked):
+    def _setModeDotted(self, checked):
         self._retroWidget.setMode(DrawingMode.DOTTED)    
 
     @Slot()

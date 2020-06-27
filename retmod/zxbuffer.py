@@ -1,6 +1,6 @@
 from PySide2 import QtGui
 from PySide2.QtGui import QColor, QPixmap
-from PySide2.QtCore import QSize
+from PySide2.QtCore import QSize, QPoint
 from PIL import Image, ImageDraw
 from PIL.ImageQt import ImageQt
 
@@ -112,6 +112,13 @@ class ZXSpectrumBuffer(object):
     def qpixmap(self):
         self._update()
         return QtGui.QPixmap.fromImage(self._final)
+    
+    @staticmethod
+    def inRange(point, range):
+        if point.x() >= 0 and point.x() < range.width() and \
+            point.y() >= 0 and point.y() < range.height():
+            return True
+        return False
 
     def clear(self, fgIndex, bgIndex, paletteIndex=0):
         for y in range(0, self.sizeAttr.height()):
@@ -137,7 +144,8 @@ class ZXSpectrumBuffer(object):
     def setAttr(self, x, y, fgIndex, bgIndex, paletteIndex):
         pos = (x * 8, y * 8)
 
-        # This does not validate for speed purposes
+        if not ZXSpectrumBuffer.inRange(QPoint(x, y), self.sizeAttr):
+            return
 
         attr = self._attributes[(x, y)]
 
@@ -161,6 +169,10 @@ class ZXSpectrumBuffer(object):
             self._needsUpdate = True
 
     def setPixel(self, x, y, fgIndex, bgIndex, paletteIndex):
+        
+        if not ZXSpectrumBuffer.inRange(QPoint(x, y), self.size):
+            return
+        
         self.setAttr(x // 8, y // 8, fgIndex, bgIndex, paletteIndex)
         self._mask.putpixel((int(x), int(y)), 1)
         self._needsUpdate = True
@@ -173,7 +185,9 @@ class ZXSpectrumBuffer(object):
     def drawLine(self, x1, y1, x2, y2, fgIndex, bgIndex, paletteIndex):
         for x, y in BresenhamLine((x1, y1), (x2, y2)):
             self.setAttr(x // 8, y // 8, fgIndex, bgIndex, paletteIndex)
-            self._mask.putpixel((int(x), int(y)), 1)
+            pos = QPoint(int(x), int(y))
+            if ZXSpectrumBuffer.inRange(pos, self.size):
+                self._mask.putpixel(pos.toTuple(), 1)
         self._needsUpdate = True
         
     def saveBuffer(self, filename, format=None):
