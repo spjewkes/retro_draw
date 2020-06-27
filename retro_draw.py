@@ -107,10 +107,14 @@ class RetroDrawWidget(QWidget):
         elif event.button() == Qt.RightButton:
             self._mousePressed = MouseButton.RIGHT
             
-        if self._drawMode in (DrawingMode.DOTTED, DrawingMode.ERASE):
+        if self._drawMode == DrawingMode.DOTTED:
             if self._mousePressed == MouseButton.LEFT:
                 self.doDraw(event.localPos(), True)
             elif self._mousePressed == MouseButton.RIGHT:
+                self.doDraw(event.localPos(), False)
+                
+        elif self._drawMode == DrawingMode.ERASE:
+            if self._mousePressed == MouseButton.LEFT:
                 self.doDraw(event.localPos(), False)
                 
         elif self._drawMode == DrawingMode.LINE:
@@ -147,10 +151,14 @@ class RetroDrawWidget(QWidget):
         self._mouseDelta = QCursor.pos() - self._mouseLastPos
         self._mouseLastPos = QCursor.pos()
         
-        if self._drawMode in (DrawingMode.DOTTED, DrawingMode.ERASE):
+        if self._drawMode == DrawingMode.DOTTED:
             if self._mousePressed == MouseButton.LEFT:
                 self.doDraw(event.localPos(), True)
             elif self._mousePressed == MouseButton.RIGHT:
+                self.doDraw(event.localPos(), False)
+        
+        elif self._drawMode == DrawingMode.ERASE:
+            if self._mousePressed == MouseButton.LEFT:
                 self.doDraw(event.localPos(), False)
                 
         elif self._drawMode == DrawingMode.GUIDE:
