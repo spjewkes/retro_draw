@@ -10,10 +10,11 @@ from retmod.zxbuffer import ZXSpectrumBuffer, ZXAttribute
 from retmod.palette import PaletteSelectorLayout
 
 class DrawingMode(Enum):
-    DRAW = 1
-    ERASE = 2
-    LINE = 3
-    GUIDE = 4
+    PEN = 1
+    DOTTED = 2
+    ERASE = 3
+    LINE = 4
+    GUIDE = 5
 
 class MouseButton(Enum):
     NONE = 0,
@@ -65,7 +66,7 @@ class RetroDrawWidget(QWidget):
         self._mouseLastPos = QCursor.pos()
         self._mouseDelta = QPoint(0, 0)
         self._mousePressed = MouseButton.NONE
-        self._drawMode = DrawingMode.DRAW
+        self._drawMode = DrawingMode.DOTTED
 
         self._lineState = None
 
@@ -106,7 +107,7 @@ class RetroDrawWidget(QWidget):
         elif event.button() == Qt.RightButton:
             self._mousePressed = MouseButton.RIGHT
             
-        if self._drawMode in (DrawingMode.DRAW, DrawingMode.ERASE):
+        if self._drawMode in (DrawingMode.DOTTED, DrawingMode.ERASE):
             if self._mousePressed == MouseButton.LEFT:
                 self.doDraw(event.localPos(), True)
             elif self._mousePressed == MouseButton.RIGHT:
@@ -146,7 +147,7 @@ class RetroDrawWidget(QWidget):
         self._mouseDelta = QCursor.pos() - self._mouseLastPos
         self._mouseLastPos = QCursor.pos()
         
-        if self._drawMode in (DrawingMode.DRAW, DrawingMode.ERASE):
+        if self._drawMode in (DrawingMode.DOTTED, DrawingMode.ERASE):
             if self._mousePressed == MouseButton.LEFT:
                 self.doDraw(event.localPos(), True)
             elif self._mousePressed == MouseButton.RIGHT:
@@ -241,10 +242,10 @@ class Form(QDialog):
 
         modes = QHBoxLayout()
         # Draw mode
-        draw_mode = QRadioButton("Draw Mode")
-        draw_mode.setChecked(True)
-        draw_mode.clicked.connect(self._setModeDraw)
-        modes.addWidget(draw_mode)
+        dotted_mode = QRadioButton("Dotted Mode")
+        dotted_mode.setChecked(True)
+        dotted_mode.clicked.connect(self._setModeDraw)
+        modes.addWidget(dotted_mode)
         erase_mode = QRadioButton("Erase Mode")
         erase_mode.setChecked(False)
         erase_mode.clicked.connect(self._setModeErase)
@@ -342,7 +343,7 @@ class Form(QDialog):
         
     @Slot()
     def _setModeDraw(self, checked):
-        self._retroWidget.setMode(DrawingMode.DRAW)    
+        self._retroWidget.setMode(DrawingMode.DOTTED)    
 
     @Slot()
     def _setModeErase(self, checked):
