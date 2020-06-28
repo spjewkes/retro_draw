@@ -14,7 +14,8 @@ class DrawingMode(Enum):
     DOTTED = 2
     ERASE = 3
     LINE = 4
-    GUIDE = 5
+    ATTR = 5
+    GUIDE = 6
 
 class MouseButton(Enum):
     NONE = 0,
@@ -134,6 +135,10 @@ class RetroDrawWidget(QWidget):
                 painter.drawLine(self._lineState[0], self._lineState[1])
                 painter.end()
                 self.update(self.rect())
+                
+        elif self._drawMode == DrawingMode.ATTR:
+            if self._mousePressed == MouseButton.LEFT:
+                self.doDrawAttr(event.localPos())
 
     def mouseReleaseEvent(self, event):
         if self._drawMode == DrawingMode.LINE:
@@ -186,6 +191,11 @@ class RetroDrawWidget(QWidget):
                 painter.drawLine(self._lineState[0], self._lineState[1])
                 painter.end()
                 self.update(self.rect())
+               
+        elif self._drawMode == DrawingMode.ATTR:
+            if self._mousePressed == MouseButton.LEFT:
+                self.doDrawAttr(event.localPos())
+
                 
     def wheelEvent(self, event):
         if self._mousePressed:
@@ -205,17 +215,22 @@ class RetroDrawWidget(QWidget):
         return value
         
     def doDraw(self, localPos, setPixel):
-        if localPos.x() >= 0.0 and localPos.x() < self.screenSize.width() and \
-           localPos.y() >= 0.0 and localPos.y() < self.screenSize.height():
-            x = localPos.x() // self.scale
-            y = localPos.y() // self.scale
+        x = localPos.x() // self.scale
+        y = localPos.y() // self.scale
 
-            if setPixel:
-                self.drawable.setPixel(x, y, self.fgIndex, self.bgIndex, self.palette)
-            else:
-                self.drawable.erasePixel(x, y, self.fgIndex, self.bgIndex, self.palette)
+        if setPixel:
+            self.drawable.setPixel(x, y, self.fgIndex, self.bgIndex, self.palette)
+        else:
+            self.drawable.erasePixel(x, y, self.fgIndex, self.bgIndex, self.palette)
 
-            self.update(self.rect())
+        self.update(self.rect())
+
+    def doDrawAttr(self, localPos):
+        x = localPos.x() // self.scale
+        y = localPos.y() // self.scale
+        
+        self.drawable.setAttr(x, y, self.fgIndex, self.bgIndex, self.palette)
+        self.update(self.rect())
             
     def doDrawLine(self, localStartPos, localEndPos):
         x1 = localStartPos.x() // self.scale
@@ -292,6 +307,11 @@ class Form(QDialog):
         line_mode.setChecked(False)
         line_mode.clicked.connect(lambda: self._retroWidget.setMode(DrawingMode.LINE))
         modes.addWidget(line_mode)
+        # Attr mode
+        attr_mode = QRadioButton("Attr Mode")
+        attr_mode.setChecked(False)
+        attr_mode.clicked.connect(lambda: self._retroWidget.setMode(DrawingMode.ATTR))
+        modes.addWidget(attr_mode)
         # Guide mode
         guide_mode = QRadioButton("Guide Mode")
         guide_mode.setChecked(False)

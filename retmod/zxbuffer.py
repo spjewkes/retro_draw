@@ -142,6 +142,8 @@ class ZXSpectrumBuffer(object):
         self._needsUpdate = True
 
     def setAttr(self, x, y, fgIndex, bgIndex, paletteIndex):
+        x = x // 8
+        y = y // 8
         pos = (x * 8, y * 8)
 
         if not ZXSpectrumBuffer.inRange(QPoint(x, y), self.sizeAttr):
@@ -173,18 +175,18 @@ class ZXSpectrumBuffer(object):
         if not ZXSpectrumBuffer.inRange(QPoint(x, y), self.size):
             return
         
-        self.setAttr(x // 8, y // 8, fgIndex, bgIndex, paletteIndex)
+        self.setAttr(x, y, fgIndex, bgIndex, paletteIndex)
         self._mask.putpixel((int(x), int(y)), 1)
         self._needsUpdate = True
 
     def erasePixel(self, x, y, fgIndex, bgIndex, paletteIndex):
-        self.setAttr(x // 8, y // 8, fgIndex, bgIndex, paletteIndex)
+        self.setAttr(x, y, fgIndex, bgIndex, paletteIndex)
         self._mask.putpixel((int(x), int(y)), 0)
         self._needsUpdate = True
         
     def drawLine(self, x1, y1, x2, y2, fgIndex, bgIndex, paletteIndex):
         for x, y in BresenhamLine((x1, y1), (x2, y2)):
-            self.setAttr(x // 8, y // 8, fgIndex, bgIndex, paletteIndex)
+            self.setAttr(x, y, fgIndex, bgIndex, paletteIndex)
             pos = QPoint(int(x), int(y))
             if ZXSpectrumBuffer.inRange(pos, self.size):
                 self._mask.putpixel(pos.toTuple(), 1)
