@@ -271,23 +271,24 @@ class Form(QDialog):
         # Draw mode
         pen_mode = QRadioButton("Pen Mode")
         pen_mode.setChecked(False)
-        pen_mode.clicked.connect(self._setModePen)
+        pen_mode.clicked.connect(lambda: self._setMode(DrawingMode.PEN))
         modes.addWidget(pen_mode)
         dotted_mode = QRadioButton("Dotted Mode")
         dotted_mode.setChecked(True)
-        dotted_mode.clicked.connect(self._setModeDotted)
+        dotted_mode.clicked.connect(lambda: self._setMode(DrawingMode.DOTTED))
         modes.addWidget(dotted_mode)
         erase_mode = QRadioButton("Erase Mode")
         erase_mode.setChecked(False)
+        erase_mode.clicked.connect(lambda: self._setMode(DrawingMode.ERASE))
         erase_mode.clicked.connect(self._setModeErase)
         modes.addWidget(erase_mode)
         line_mode = QRadioButton("Line Mode")
         line_mode.setChecked(False)
-        line_mode.clicked.connect(self._setModeLine)
+        line_mode.clicked.connect(lambda: self._setMode(DrawingMode.LINE))
         modes.addWidget(line_mode)
         guide_mode = QRadioButton("Guide Mode")
         guide_mode.setChecked(False)
-        guide_mode.clicked.connect(self._setModeGuide)
+        guide_mode.clicked.connect(lambda: self._setMode(DrawingMode.GUIDE))
         modes.addWidget(guide_mode)
 
         buttons = QHBoxLayout()
@@ -372,25 +373,8 @@ class Form(QDialog):
     def _setGuideSlider(self, value):
         self._retroWidget.setGuideOpacity(value)
 
-    @Slot()
-    def _setModePen(self, checked):
-        self._retroWidget.setMode(DrawingMode.PEN)
-        
-    @Slot()
-    def _setModeDotted(self, checked):
-        self._retroWidget.setMode(DrawingMode.DOTTED)    
-
-    @Slot()
-    def _setModeErase(self, checked):
-        self._retroWidget.setMode(DrawingMode.ERASE)    
-
-    @Slot()
-    def _setModeLine(self, checked):
-        self._retroWidget.setMode(DrawingMode.LINE)
-
-    @Slot()
-    def _setModeGuide(self, checked):
-        self._retroWidget.setMode(DrawingMode.GUIDE)    
+    def _setMode(self, mode):
+        self._retroWidget.setMode(mode)
 
 if __name__ == "__main__":
     # Create the Qt Application
