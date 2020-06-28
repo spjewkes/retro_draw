@@ -255,6 +255,10 @@ class RetroDrawWidget(QWidget):
         
     def setMode(self, mode):
         self._drawMode = mode
+        
+    def clear(self):
+        self.drawable.clear(self.fgIndex, self.bgIndex, self.palette)
+        self.repaint()
 
 class Form(QDialog):
     def __init__(self, parent=None):
@@ -262,33 +266,36 @@ class Form(QDialog):
         self.setWindowTitle("Drawing App")
 
         fgIndex = 0
-        bgIndex = 2
-        palette = 1
+        bgIndex = 7
+        palette = 0
         self._retroWidget = RetroDrawWidget(fgIndex, bgIndex, palette)
         self._paletteWidget = PaletteSelectorLayout(fgIndex, bgIndex, palette, self._retroWidget.setColor)
 
         modes = QHBoxLayout()
-        # Draw mode
+        # Pen mode
         pen_mode = QRadioButton("Pen Mode")
         pen_mode.setChecked(False)
-        pen_mode.clicked.connect(lambda: self._setMode(DrawingMode.PEN))
+        pen_mode.clicked.connect(lambda: self._retroWidget.setMode(DrawingMode.PEN))
         modes.addWidget(pen_mode)
+        # Dotted mode
         dotted_mode = QRadioButton("Dotted Mode")
         dotted_mode.setChecked(True)
-        dotted_mode.clicked.connect(lambda: self._setMode(DrawingMode.DOTTED))
+        dotted_mode.clicked.connect(lambda: self._retroWidget.setMode(DrawingMode.DOTTED))
         modes.addWidget(dotted_mode)
+        # Erase mode
         erase_mode = QRadioButton("Erase Mode")
         erase_mode.setChecked(False)
-        erase_mode.clicked.connect(lambda: self._setMode(DrawingMode.ERASE))
-        erase_mode.clicked.connect(self._setModeErase)
+        erase_mode.clicked.connect(lambda: self._retroWidget.setMode(DrawingMode.ERASE))
         modes.addWidget(erase_mode)
+        # Line mode
         line_mode = QRadioButton("Line Mode")
         line_mode.setChecked(False)
-        line_mode.clicked.connect(lambda: self._setMode(DrawingMode.LINE))
+        line_mode.clicked.connect(lambda: self._retroWidget.setMode(DrawingMode.LINE))
         modes.addWidget(line_mode)
+        # Guide mode
         guide_mode = QRadioButton("Guide Mode")
         guide_mode.setChecked(False)
-        guide_mode.clicked.connect(lambda: self._setMode(DrawingMode.GUIDE))
+        guide_mode.clicked.connect(lambda: self._retroWidget.setMode(DrawingMode.GUIDE))
         modes.addWidget(guide_mode)
 
         buttons = QHBoxLayout()
@@ -312,7 +319,11 @@ class Form(QDialog):
         enable_grid_check.clicked.connect(self._setGrid)
         self._retroWidget.setGrid(True)
         buttons.addWidget(enable_grid_check)
-        
+        # Clear screen
+        clear_screen_button = QPushButton("Clear Screen")
+        clear_screen_button.clicked.connect(self._clearScreen)
+        buttons.addWidget(clear_screen_button)        
+                
         sliders = QHBoxLayout()
         # Guide slider
         sliders.addWidget(QLabel("Guide Opacity:"))
@@ -372,9 +383,10 @@ class Form(QDialog):
     @Slot()
     def _setGuideSlider(self, value):
         self._retroWidget.setGuideOpacity(value)
-
-    def _setMode(self, mode):
-        self._retroWidget.setMode(mode)
+        
+    @Slot()
+    def _clearScreen(self):
+        self._retroWidget.clear()
 
 if __name__ == "__main__":
     # Create the Qt Application
