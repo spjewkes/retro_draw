@@ -90,12 +90,8 @@ class RetroDrawWidget(QWidget):
         painter.drawPixmap(rectTarget, self.drawable.qpixmap, rectSource)
 
         if self._guide and self._guideEnabled:
-            guideZoom = self._guide.scaled(self._guide.width() * self._guideZoom,
-                                           self._guide.height() * self._guideZoom, Qt.KeepAspectRatio)
-            pos = QPoint(self._guideCoords.x() + (self.screenCenter.x() - guideZoom.width() / 2),
-                         self._guideCoords.y() + (self.screenCenter.y() - guideZoom.height() / 2))
             painter.setOpacity(self._guideOpacity)
-            painter.drawPixmap(pos, guideZoom)
+            self._paintZoomedGuide(painter)
         if self._gridEnabled:
             painter.setOpacity(self._gridOpacity)
             painter.drawImage(rectTarget, self.grid, rectTarget)
@@ -275,6 +271,35 @@ class RetroDrawWidget(QWidget):
         self.drawable.clear(self.fgIndex, self.bgIndex, self.palette)
         self.repaint()
 
+    def _paintZoomedGuide(self, painter):
+        guideZoom = self._guide.scaled(self._guide.width() * self._guideZoom,
+                                       self._guide.height() * self._guideZoom, Qt.KeepAspectRatio)
+        pos = QPoint(self._guideCoords.x() + (self.screenCenter.x() - guideZoom.width() / 2),
+                     self._guideCoords.y() + (self.screenCenter.y() - guideZoom.height() / 2))
+        painter.drawPixmap(pos, guideZoom)
+        
+    def copyGuide(self):
+        # This isn't the most efficient way to do this but it just needs to be
+        # reasonably fast
+        self.drawable.clear(self.fgIndex, self.bgIndex, self.palette)
+
+        guide_copy = QImage(self.screenSize, QImage.Format_RGBA8888)
+        guide_copy.fill(QColor("white"))
+
+        painter = QPainter(guide_copy)
+        self._paintZoomedGuide(painter)
+        
+        shrunk_guide = guide_copy.smoothScaled(self.canvasSize.width(), self.canvasSize.height())
+        mono_guide = shrunk_guide.convertToFormat(QImage.Format_Mono)
+        
+        for x in range(0, self.canvasSize.width()):
+            for y in range(0, self.canvasSize.height()):
+                if mono_guide.pixel(x, y) == QColor("black"):
+                      self.drawable.setPixel(x, y, self.fgIndex, self.bgIndex, self.palette)      
+
+        painter.end()
+        self.repaint()
+
 class Form(QDialog):
     def __init__(self, parent=None):
         super(Form, self).__init__(parent)
@@ -343,6 +368,10 @@ class Form(QDialog):
         clear_screen_button = QPushButton("Clear Screen")
         clear_screen_button.clicked.connect(self._clearScreen)
         buttons.addWidget(clear_screen_button)        
+        # Copy Guide
+        copy_guide_button = QPushButton("Copy Guide")
+        copy_guide_button.clicked.connect(self._copyGuide)
+        buttons.addWidget(copy_guide_button)
                 
         sliders = QHBoxLayout()
         # Guide slider
@@ -407,6 +436,10 @@ class Form(QDialog):
     @Slot()
     def _clearScreen(self):
         self._retroWidget.clear()
+        
+    @Slot()
+    def _copyGuide(self):
+        self._retroWidget.copyGuide()
 
 if __name__ == "__main__":
     # Create the Qt Application
