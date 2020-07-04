@@ -55,8 +55,9 @@ class PaletteSelectorLayout(QGroupBox):
 
         for index in range(0, ZXAttribute.paletteSize()):
             button = QCheckBox()
-            color = QColor(*ZXAttribute.getPaletteColor(index, 1))
+            color = QColor(*ZXAttribute.getPaletteColor(index, 0))
             button.setStyleSheet("background-color: {}".format(color.name()))
+            button.setText(ZXAttribute.getPaletteName(index, 0))
 
             if index == setIndex:
                 button.setChecked(True)

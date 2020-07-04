@@ -28,8 +28,8 @@ class ZXAttribute(object):
         # This should be the correct color for the ZX Spectrum but the 
         # drawPixmap in the paintEvent of the widget seems to be altering
         # the gamma
-        # palette = ((0, 0, 0), (0, 0, 215), (215, 0, 0), (215, 0, 215),
-        #            (0, 215, 0), (0, 215, 215), (215, 215, 0), (215, 215, 215))
+        #palette = ((0, 0, 0), (0, 0, 215), (215, 0, 0), (215, 0, 215),
+        #           (0, 215, 0), (0, 215, 215), (215, 215, 0), (215, 215, 215))
         palette = ((0, 0, 0), (0, 0, 160), (160, 0, 0), (160, 0, 160),
                    (0, 160, 0), (0, 160, 160), (160, 160, 0), (160, 160, 160))
         brightPalette = ((0, 0, 0), (0, 0, 255), (255, 0, 0), (255, 0, 255),
@@ -39,6 +39,11 @@ class ZXAttribute(object):
             return palette[indexColor]
         
         return brightPalette[indexColor]
+    
+    @staticmethod
+    def getPaletteName(indexColor, indexPalette):
+        palette = ("Black", "Blue", "Red", "Magenta", "Green", "Cyan", "Yellow", "White")
+        return palette[indexColor]
 
     @staticmethod
     def _validatePaletteColor(indexColor, indexPalette=0):
