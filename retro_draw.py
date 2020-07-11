@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 
 import sys
+import json
 from enum import Enum
 from PySide2.QtWidgets import QApplication, QDialog, QLineEdit, QPushButton, QVBoxLayout, QWidget, QHBoxLayout, \
     QLabel, QCheckBox, QButtonGroup, QGroupBox, QFileDialog, QSlider, QRadioButton
@@ -51,6 +52,7 @@ class RetroDrawWidget(QWidget):
         self._gridEnabled = True
         self._gridOpacity = 0.2
 
+        self._guideFilename = None
         self._guide = None
         self._guideEnabled = True
         self._guideOpacity = 0.2
@@ -70,6 +72,37 @@ class RetroDrawWidget(QWidget):
         self._drawMode = DrawingMode.DOTTED
 
         self._lineState = None
+
+    def encodeToJSON(self):
+        rdict = dict()
+        rdict["fg_index"] = self.fgIndex
+        rdict["bg_index"] = self.bgIndex
+        rdict["palette"] = self.palette
+        rdict["grid_enabled"] = self._gridEnabled
+        rdict["grid_opacity"] = self._gridOpacity
+        rdict["guide_filename"] = self._guideFilename
+        rdict["guide_enabled"] = self._guideEnabled
+        rdict["guide_opacity"] = self._guideOpacity
+        rdict["guide_coords_x"] = self._guideCoords.x()
+        rdict["guide_coords_y"] = self._guideCoords.y()
+        rdict["guide_zoom"] = self._guideZoom
+        rdict["drawable"] = self.drawable.encodeToJSON()
+        return rdict
+        
+    def decodeFromJSON(self, json):
+        self.fgIndex = json["fg_index"]
+        self.bgIndex = json["bg_index"]
+        self.palette = json["palette"]
+        self._gridEnabled = json["grid_enabled"]
+        self._gridOpacity = json["grid_opacity"]
+        self._guideFilename = json["guide_filename"]
+        self._guide = QPixmap(self._guideFilename)
+        self._guideEnabled = json["guide_enabled"]
+        self._guideOpacity = json["guide_opacity"]
+        self._guideCoords.setX(json["guide_coords_x"])
+        self._guideCoords.setY(json["guide_coords_y"])
+        self._guideZoom = json["guide_zoom"]
+        self.drawable.decodeFromJSON(json["drawable"])
 
     def sizeHint(self):
         return self.screenSize
@@ -253,7 +286,8 @@ class RetroDrawWidget(QWidget):
         self.repaint()
         
     def setGuideImage(self, filename):
-        self._guide = QPixmap(filename)
+        self._guideFilename = filename
+        self._guide = QPixmap(self._guideFilename)
         self.repaint()
         
     def setGuide(self, checked):
@@ -372,6 +406,14 @@ class Form(QDialog):
         copy_guide_button = QPushButton("Copy Guide")
         copy_guide_button.clicked.connect(self._copyGuide)
         buttons.addWidget(copy_guide_button)
+        # Save Project
+        save_project_button = QPushButton("Save Project")
+        save_project_button.clicked.connect(self._saveProject)
+        buttons.addWidget(save_project_button)
+        # Load Project
+        load_project_button = QPushButton("Load Project")
+        load_project_button.clicked.connect(self._loadProject)
+        buttons.addWidget(load_project_button)
                 
         sliders = QHBoxLayout()
         # Guide slider
@@ -440,6 +482,17 @@ class Form(QDialog):
     @Slot()
     def _copyGuide(self):
         self._retroWidget.copyGuide()
+        
+    @Slot()
+    def _saveProject(self):
+        with open("test_proj.json", "w") as output:
+            json.dump(self._retroWidget.encodeToJSON(), output)
+            
+    @Slot()
+    def _loadProject(self):
+        with open("test_proj.json", "r") as input:
+            self._retroWidget.decodeFromJSON(json.load(input))
+        self._retroWidget.repaint()
 
 if __name__ == "__main__":
     # Create the Qt Application

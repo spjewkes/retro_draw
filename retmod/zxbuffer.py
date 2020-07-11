@@ -3,6 +3,7 @@ from PySide2.QtGui import QColor, QPixmap
 from PySide2.QtCore import QSize, QPoint
 from PIL import Image, ImageDraw
 from PIL.ImageQt import ImageQt
+import numpy as np
 
 from retmod.bresenham import BresenhamLine
 
@@ -80,6 +81,22 @@ class ZXAttribute(object):
     def palette(self, value):
         ZXAttribute._validatePaletteColor(self._ink, value)
         self._palette = value
+        
+    def encodeToJSON(self):
+        rdict = dict()
+
+        rdict["ink"] = self._ink
+        rdict["paper"] = self._paper
+        rdict["palette"] = self._palette
+        
+        return rdict
+
+    def decodeFromJSON(self, json):
+        self._ink = json["ink"]
+        self._paper = json["paper"]
+        self._palette = json["palette"]
+        if self._paper < 7:
+            print(self._paper)
 
 class ZXSpectrumBuffer(object):
     """
@@ -200,3 +217,32 @@ class ZXSpectrumBuffer(object):
     def saveBuffer(self, filename, format=None):
         self._update()
         self._final.save(filename, format)
+        
+    def encodeToJSON(self):
+        rdict = dict()
+        rdict["mask"] = np.array(self._mask, dtype='uint8').tolist()
+
+        for y in range(0, self.sizeAttr.height()):
+            for x in range(0, self.sizeAttr.width()):
+                key = "{},{}".format(x, y)
+                rdict[key] = self._attributes[(x, y)].encodeToJSON()
+
+        return rdict
+    
+    def decodeFromJSON(self, json):
+        # Load image as B&W image first and then convert to bitmask
+        # There may be a solution to create the 1-bit pixmap directly but this can be looked at later
+        image_data = np.array(json["mask"], dtype='uint8') * 255
+        image = Image.fromarray(image_data, mode="L")
+        self._mask = image.convert("1")
+        
+        for y in range(0, self.sizeAttr.height()):
+            for x in range(0, self.sizeAttr.width()):
+                # As we need to update the image with the attribute, go via setAttr rather than
+                # directly updating the screen attributes
+                attr = ZXAttribute()
+                attr.decodeFromJSON(json["{},{}".format(x, y)])
+                self.setAttr(x * 8, y * 8, attr.ink, attr.paper, attr.palette)
+        
+        self._needsUpdate = True
+                
