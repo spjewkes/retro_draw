@@ -4,7 +4,7 @@
 
 A utility to allow drawing of retro images.
 
-Needs Python3 and PySide2 installed to run.
+Needs Python3 and PySide6 installed to run.
 
 
 
