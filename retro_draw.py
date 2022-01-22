@@ -3,10 +3,10 @@
 import sys
 import json
 from enum import Enum
-from PySide2.QtWidgets import QApplication, QDialog, QLineEdit, QPushButton, QVBoxLayout, QWidget, QHBoxLayout, \
+from PySide6.QtWidgets import QApplication, QDialog, QLineEdit, QPushButton, QVBoxLayout, QWidget, QHBoxLayout, \
     QLabel, QCheckBox, QButtonGroup, QGroupBox, QFileDialog, QSlider, QRadioButton
-from PySide2.QtGui import QIcon, QPainter, QBrush, QPen, QColor, QFont, QImage, QPixmap, QCursor
-from PySide2.QtCore import QSize, QRect, QPoint, Qt, Slot
+from PySide6.QtGui import QIcon, QPainter, QBrush, QPen, QColor, QFont, QImage, QPixmap, QCursor
+from PySide6.QtCore import QSize, QRect, QPoint, Qt, Slot
 from retmod.zxbuffer import ZXSpectrumBuffer, ZXAttribute
 from retmod.palette import PaletteSelectorLayout
 

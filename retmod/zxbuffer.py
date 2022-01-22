@@ -1,6 +1,6 @@
-from PySide2 import QtGui
-from PySide2.QtGui import QColor, QPixmap
-from PySide2.QtCore import QSize, QPoint
+from PySide6 import QtGui
+from PySide6.QtGui import QColor, QPixmap
+from PySide6.QtCore import QSize, QPoint
 from PIL import Image, ImageDraw
 from PIL.ImageQt import ImageQt
 import numpy as np

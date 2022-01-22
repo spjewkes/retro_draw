@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
 
-from PySide2.QtWidgets import QPushButton, QVBoxLayout, QHBoxLayout, QLabel, QCheckBox, QButtonGroup, QGroupBox
-from PySide2.QtGui import QColor
-from PySide2.QtCore import Slot
+from PySide6.QtWidgets import QPushButton, QVBoxLayout, QHBoxLayout, QLabel, QCheckBox, QButtonGroup, QGroupBox
+from PySide6.QtGui import QColor
+from PySide6.QtCore import Slot
 from retmod.zxbuffer import ZXAttribute
 
 class PaletteSelectorLayout(QGroupBox):
